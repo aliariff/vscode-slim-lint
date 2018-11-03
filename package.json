@@ -1,26 +1,37 @@
 {
-    "name": "vscode-slim-lint",
-    "displayName": "vscode-slim-lint",
-    "description": "",
+    "name": "slim-lint",
+    "displayName": "Slim Lint",
+    "description": "Slim Linter for Visual Studio Code",
     "version": "0.0.1",
     "publisher": "aliariff",
+    "license": "MIT",
+    "bugs": "https://github.com/aliariff/vscode-slim-lint/issues",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/aliariff/vscode-slim-lint"
+    },
     "engines": {
         "vscode": "^1.28.0"
     },
     "categories": [
-        "Other"
+        "Linters"
     ],
     "activationEvents": [
-        "onCommand:extension.sayHello"
+        "onLanguage:slim"
     ],
     "main": "./out/extension",
     "contributes": {
-        "commands": [
-            {
-                "command": "extension.sayHello",
-                "title": "Hello World"
+        "configuration": {
+            "type": "object",
+            "title": "Slim Lint Configuration",
+            "properties": {
+                "slimLint.executablePath": {
+                    "type": "string",
+                    "default": "slim-lint",
+                    "description": "Path to slim-lint executable"
+                }
             }
-        ]
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
