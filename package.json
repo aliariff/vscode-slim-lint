@@ -5,6 +5,7 @@
     "version": "0.0.1",
     "publisher": "aliariff",
     "license": "MIT",
+    "icon": "images/icon.png",
     "bugs": "https://github.com/aliariff/vscode-slim-lint/issues",
     "repository": {
         "type": "git",
