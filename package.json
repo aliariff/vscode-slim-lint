@@ -30,6 +30,11 @@
                     "type": "string",
                     "default": "slim-lint",
                     "description": "Path to slim-lint executable"
+                },
+                "slimLint.configurationPath": {
+                    "type": "string",
+                    "default": ".slim-lint.yml",
+                    "description": "Path to slim-lint configuration file"
                 }
             }
         }

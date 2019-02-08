@@ -57,7 +57,16 @@ export default class Linter {
 
     const executablePath = workspace.getConfiguration("slimLint")
       .executablePath;
+    let configurationPath = workspace.getConfiguration("slimLint")
+      .configurationPath;
     const [command, ...args] = executablePath.split(/\s+/);
+
+    if (configurationPath === ".slim-lint.yml" && workspace.workspaceFolders) {
+      configurationPath =
+        workspace.workspaceFolders[0].uri.fsPath + "/" + configurationPath;
+    }
+    args.push("--config", configurationPath);
+
     const process = execa(command, [...args, document.uri.fsPath], {
       reject: false
     });
