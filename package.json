@@ -2,7 +2,7 @@
     "name": "slim-lint",
     "displayName": "Slim Lint",
     "description": "Slim Linter for Visual Studio Code",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "publisher": "aliariff",
     "license": "MIT",
     "icon": "images/icon.png",
