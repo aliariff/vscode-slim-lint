@@ -1,4 +1,5 @@
 import * as execa from "execa";
+import * as fs from "fs";
 import {
   Diagnostic,
   DiagnosticCollection,
@@ -65,7 +66,11 @@ export default class Linter {
       configurationPath =
         workspace.workspaceFolders[0].uri.fsPath + "/" + configurationPath;
     }
-    args.push("--config", configurationPath);
+    if (fs.existsSync(configurationPath)) {
+      args.push("--config", configurationPath);
+    } else {
+      console.warn(`${configurationPath} path does not exist! slim-lint extension using default settings`)
+    }
 
     const process = execa(command, [...args, document.uri.fsPath], {
       reject: false
