@@ -77,7 +77,7 @@ export default class Linter {
     });
 
     this.processes.set(document, process);
-    const { code, stdout } = await process;
+    const { stdout } = await process;
     this.processes.delete(document);
 
     if (text !== document.getText()) {
@@ -85,10 +85,6 @@ export default class Linter {
     }
 
     this.collection.delete(document.uri);
-    if (code === 0) {
-      return;
-    }
-
     this.collection.set(document.uri, this.parse(stdout, document));
   }
 
