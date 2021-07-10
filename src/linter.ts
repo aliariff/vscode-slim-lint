@@ -73,8 +73,11 @@ export default class Linter {
       console.warn(`${configurationPath} path does not exist! slim-lint extension using default settings`)
     }
 
+    let cwd = workspace.workspaceFolders ? workspace.workspaceFolders[0].uri.fsPath : "/";
+
     const process = execa(command, [...args, document.uri.fsPath], {
-      reject: false
+      reject: false,
+      cwd
     });
 
     this.processes.set(document, process);
