@@ -8,7 +8,8 @@ import {
   TextDocument,
   workspace,
   Range,
-  Position
+  Position,
+  window
 } from "vscode";
 
 const REGEX = /.+?:(\d+) \[(W|E)] (\w+): (.+)/g;
@@ -77,7 +78,11 @@ export default class Linter {
     });
 
     this.processes.set(document, process);
-    const { stdout } = await process;
+    const { stdout, stderr } = await process;
+    if (stderr) {
+      console.error(stderr);
+      window.showErrorMessage(stderr)
+    }
     this.processes.delete(document);
 
     if (text !== document.getText()) {
