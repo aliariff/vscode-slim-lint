@@ -8,7 +8,8 @@ import {
   TextDocument,
   workspace,
   Range,
-  Position
+  Position,
+  window
 } from "vscode";
 
 const REGEX = /.+?:(\d+) \[(W|E)] (\w+): (.+)/g;
@@ -72,12 +73,19 @@ export default class Linter {
       console.warn(`${configurationPath} path does not exist! slim-lint extension using default settings`)
     }
 
+    let cwd = workspace.workspaceFolders ? workspace.workspaceFolders[0].uri.fsPath : "/";
+
     const process = execa(command, [...args, document.uri.fsPath], {
-      reject: false
+      reject: false,
+      cwd
     });
 
     this.processes.set(document, process);
-    const { stdout } = await process;
+    const { stdout, stderr } = await process;
+    if (stderr) {
+      console.error(stderr);
+      window.showErrorMessage(stderr)
+    }
     this.processes.delete(document);
 
     if (text !== document.getText()) {
