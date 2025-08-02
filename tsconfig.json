@@ -4,8 +4,11 @@
         "outDir": "out",
         "rootDir": "src",
         "sourceMap": true,
-        "strict": true,
-        "target": "es6"
+        "strict": false,
+        "target": "es6",
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true
     },
     "exclude": [
         "node_modules",

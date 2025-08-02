@@ -1,4 +1,4 @@
-import * as execa from "execa";
+import { execa } from "execa";
 import * as fs from "fs";
 import {
   Diagnostic,
@@ -20,7 +20,7 @@ export default class Linter {
   );
   private processes: WeakMap<
     TextDocument,
-    execa.ExecaChildProcess
+    any
   > = new WeakMap();
 
   /**
