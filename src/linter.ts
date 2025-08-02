@@ -1,6 +1,7 @@
 import { execa } from 'execa';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as vscode from 'vscode';
 import {
   Diagnostic,
   DiagnosticCollection,
@@ -33,16 +34,19 @@ interface SlimLintOutput {
 export default class Linter {
   private collection: DiagnosticCollection;
   private processes: WeakMap<TextDocument, any>;
+  private outputChannel: vscode.OutputChannel;
 
-  constructor() {
+  constructor(outputChannel: vscode.OutputChannel) {
     this.collection = languages.createDiagnosticCollection(DIAGNOSTIC_COLLECTION_NAME);
     this.processes = new WeakMap();
+    this.outputChannel = outputChannel;
   }
 
   /**
    * Dispose of the linter and clean up resources
    */
   public dispose(): void {
+    this.outputChannel.appendLine('Disposing linter and cleaning up resources');
     this.collection.dispose();
   }
 
@@ -52,9 +56,11 @@ export default class Linter {
    */
   public run(document: TextDocument): void {
     if (!this.shouldLintDocument(document)) {
+      this.outputChannel.appendLine(`Skipping lint for non-slim file: ${document.fileName}`);
       return;
     }
 
+    this.outputChannel.appendLine(`Running linter on: ${document.fileName}`);
     this.lint(document);
   }
 
@@ -64,6 +70,7 @@ export default class Linter {
    */
   public clear(document: TextDocument): void {
     if (this.isFileDocument(document)) {
+      this.outputChannel.appendLine(`Clearing diagnostics for: ${document.fileName}`);
       this.collection.delete(document.uri);
     }
   }
@@ -248,19 +255,29 @@ export default class Linter {
       const config = this.getConfiguration();
       const commandArgs = this.buildCommandArgs(config, document.uri.fsPath);
 
+      this.outputChannel.appendLine(`Executing slim-lint: ${commandArgs.join(' ')}`);
+
       // Execute slim-lint
-      const { stdout } = await this.executeSlimLint(commandArgs);
+      const { stdout, stderr } = await this.executeSlimLint(commandArgs);
+
+      this.outputChannel.appendLine(`slim-lint stdout: ${stdout}`);
+      if (stderr) {
+        this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
+      }
 
       // Check if document content changed during linting
       if (originalText !== document.getText()) {
+        this.outputChannel.appendLine('Document content changed during linting, skipping update');
         return;
       }
 
       // Parse output and update diagnostics
       const diagnostics = this.parseOutput(stdout, document);
+      this.outputChannel.appendLine(`Parsed ${diagnostics.length} diagnostics`);
       this.updateDiagnostics(document, diagnostics);
 
     } catch (error) {
+      this.outputChannel.appendLine(`Error during linting: ${error}`);
       console.error('Error during linting:', error);
       window.showErrorMessage(`slim-lint execution failed: ${error}`);
     }

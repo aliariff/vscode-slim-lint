@@ -8,10 +8,14 @@ import Linter from '../../linter';
 suite('Linter Test Suite', () => {
   let linter: Linter;
   let testDocument: vscode.TextDocument;
+  let outputChannel: vscode.OutputChannel;
 
   setup(async () => {
+    // Create output channel for testing
+    outputChannel = vscode.window.createOutputChannel('Slim Lint Test');
+    
     // Create a fresh linter instance
-    linter = new Linter();
+    linter = new Linter(outputChannel);
 
     // Create a test Slim file with known issues
     const testContent = `doctype html
@@ -34,6 +38,11 @@ html
   teardown(() => {
     // Dispose the linter
     linter.dispose();
+
+    // Dispose the output channel
+    if (outputChannel) {
+      outputChannel.dispose();
+    }
 
     // Clean up test file
     const testFile = path.join(__dirname, '../../../test-file.slim');
