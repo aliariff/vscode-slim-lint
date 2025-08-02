@@ -1,0 +1,38 @@
+{
+  "testFiles": {
+    "valid-slim": {
+      "content": "doctype html\nhtml\n  head\n    title Test\n  body\n    h1 Hello World",
+      "expectedIssues": 0
+    },
+    "invalid-slim": {
+      "content": "doctype html\nhtml\n  head\n    title Test\n  body\n    div\n      p This line is intentionally too long and should trigger linting warnings if line length rules are enabled",
+      "expectedIssues": 1
+    },
+    "empty-slim": {
+      "content": "",
+      "expectedIssues": 0
+    },
+    "malformed-slim": {
+      "content": "doctype html\nhtml\n  head\n    title Test\n  body\n    div\n      p Unclosed tag\n    div\n      p Another issue",
+      "expectedIssues": 2
+    }
+  },
+  "testScenarios": {
+    "activation": {
+      "description": "Test extension activation on slim files",
+      "files": ["valid-slim"]
+    },
+    "linting": {
+      "description": "Test linting functionality",
+      "files": ["valid-slim", "invalid-slim", "malformed-slim"]
+    },
+    "error-handling": {
+      "description": "Test error handling scenarios",
+      "files": ["empty-slim", "malformed-slim"]
+    },
+    "configuration": {
+      "description": "Test configuration changes",
+      "files": ["valid-slim"]
+    }
+  }
+}
