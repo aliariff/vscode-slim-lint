@@ -1,4 +1,5 @@
 import { execa } from 'execa';
+import * as fs from 'fs';
 import {
   Diagnostic,
   DiagnosticCollection,
@@ -18,10 +19,16 @@ export default class Linter {
     languages.createDiagnosticCollection('slim-lint');
   private processes: WeakMap<TextDocument, any> = new WeakMap();
 
+  /**
+   * dispose
+   */
   public dispose() {
     this.collection.dispose();
   }
 
+  /**
+   * run
+   */
   public run(document: TextDocument) {
     if (document.languageId !== 'slim') {
       return;
@@ -30,6 +37,9 @@ export default class Linter {
     this.lint(document);
   }
 
+  /**
+   * clear
+   */
   public clear(document: TextDocument) {
     if (document.uri.scheme === 'file') {
       this.collection.delete(document.uri);
@@ -38,7 +48,6 @@ export default class Linter {
 
   private async lint(document: TextDocument) {
     const text = document.getText();
-
     const oldProcess = this.processes.get(document);
     if (oldProcess) {
       oldProcess.kill();
@@ -46,50 +55,51 @@ export default class Linter {
 
     const executablePath =
       workspace.getConfiguration('slimLint').executablePath;
-    const configurationPath =
+    let configurationPath =
       workspace.getConfiguration('slimLint').configurationPath;
-
     const [command, ...args] = executablePath.split(/\s+/);
 
-    if (configurationPath) {
+    if (configurationPath === '.slim-lint.yml' && workspace.workspaceFolders) {
+      configurationPath =
+        workspace.workspaceFolders[0].uri.fsPath + '/' + configurationPath;
+    }
+    if (fs.existsSync(configurationPath)) {
       args.push('--config', configurationPath);
+    } else {
+      console.warn(
+        `${configurationPath} path does not exist! slim-lint extension using default settings`
+      );
     }
 
-    try {
-      const process = execa(command, [...args, document.uri.fsPath], {
-        reject: false,
-      });
+    let cwd = workspace.workspaceFolders
+      ? workspace.workspaceFolders[0].uri.fsPath
+      : '/';
 
-      this.processes.set(document, process);
-      
-      const { stdout, stderr } = await process;
-      
-      this.processes.delete(document);
+    const process = execa(command, [...args, document.uri.fsPath], {
+      reject: false,
+      cwd,
+    });
 
-      if (stderr) {
-        window.showErrorMessage(stderr);
-      }
-
-      if (text !== document.getText()) {
-        return;
-      }
-
-      this.collection.delete(document.uri);
-      
-      const diagnostics = this.parse(stdout, document);
-      
-      this.collection.set(document.uri, diagnostics);
-      
-    } catch (error) {
-      console.error(`Error during linting: ${error}`);
+    this.processes.set(document, process);
+    const { stdout, stderr } = await process;
+    if (stderr) {
+      console.error(stderr);
+      window.showErrorMessage(stderr);
     }
+    this.processes.delete(document);
+
+    if (text !== document.getText()) {
+      return;
+    }
+
+    this.collection.delete(document.uri);
+    this.collection.set(document.uri, this.parse(stdout, document));
   }
 
   private parse(output: string, document: TextDocument): Diagnostic[] {
     const diagnostics = [];
 
     let match = REGEX.exec(output);
-    
     while (match !== null) {
       const severity =
         match[2] === 'W'
@@ -98,7 +108,6 @@ export default class Linter {
       const line = Math.max(Number.parseInt(match[1], 10) - 1, 0);
       const ruleName = match[3];
       const message = match[4];
-      
       const lineText = document.lineAt(line);
       const lineTextRange = lineText.range;
       const range = new Range(
@@ -109,9 +118,9 @@ export default class Linter {
         lineTextRange.end
       );
 
-      const diagnostic = new Diagnostic(range, `${ruleName}: ${message}`, severity);
-      diagnostics.push(diagnostic);
-      
+      diagnostics.push(
+        new Diagnostic(range, `${ruleName}: ${message}`, severity)
+      );
       match = REGEX.exec(output);
     }
 
