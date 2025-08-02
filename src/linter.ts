@@ -1,5 +1,5 @@
-import * as execa from "execa";
-import * as fs from "fs";
+import { execa } from 'execa';
+import * as fs from 'fs';
 import {
   Diagnostic,
   DiagnosticCollection,
@@ -9,19 +9,15 @@ import {
   workspace,
   Range,
   Position,
-  window
-} from "vscode";
+  window,
+} from 'vscode';
 
 const REGEX = /.+?:(\d+) \[(W|E)] (\w+): (.+)/g;
 
 export default class Linter {
-  private collection: DiagnosticCollection = languages.createDiagnosticCollection(
-    "slim-lint"
-  );
-  private processes: WeakMap<
-    TextDocument,
-    execa.ExecaChildProcess
-  > = new WeakMap();
+  private collection: DiagnosticCollection =
+    languages.createDiagnosticCollection('slim-lint');
+  private processes: WeakMap<TextDocument, any> = new WeakMap();
 
   /**
    * dispose
@@ -34,7 +30,7 @@ export default class Linter {
    * run
    */
   public run(document: TextDocument) {
-    if (document.languageId !== "slim") {
+    if (document.languageId !== 'slim') {
       return;
     }
 
@@ -45,7 +41,7 @@ export default class Linter {
    * clear
    */
   public clear(document: TextDocument) {
-    if (document.uri.scheme === "file") {
+    if (document.uri.scheme === 'file') {
       this.collection.delete(document.uri);
     }
   }
@@ -57,34 +53,38 @@ export default class Linter {
       oldProcess.kill();
     }
 
-    const executablePath = workspace.getConfiguration("slimLint")
-      .executablePath;
-    let configurationPath = workspace.getConfiguration("slimLint")
-      .configurationPath;
+    const executablePath =
+      workspace.getConfiguration('slimLint').executablePath;
+    let configurationPath =
+      workspace.getConfiguration('slimLint').configurationPath;
     const [command, ...args] = executablePath.split(/\s+/);
 
-    if (configurationPath === ".slim-lint.yml" && workspace.workspaceFolders) {
+    if (configurationPath === '.slim-lint.yml' && workspace.workspaceFolders) {
       configurationPath =
-        workspace.workspaceFolders[0].uri.fsPath + "/" + configurationPath;
+        workspace.workspaceFolders[0].uri.fsPath + '/' + configurationPath;
     }
     if (fs.existsSync(configurationPath)) {
-      args.push("--config", configurationPath);
+      args.push('--config', configurationPath);
     } else {
-      console.warn(`${configurationPath} path does not exist! slim-lint extension using default settings`)
+      console.warn(
+        `${configurationPath} path does not exist! slim-lint extension using default settings`
+      );
     }
 
-    let cwd = workspace.workspaceFolders ? workspace.workspaceFolders[0].uri.fsPath : "/";
+    let cwd = workspace.workspaceFolders
+      ? workspace.workspaceFolders[0].uri.fsPath
+      : '/';
 
     const process = execa(command, [...args, document.uri.fsPath], {
       reject: false,
-      cwd
+      cwd,
     });
 
     this.processes.set(document, process);
     const { stdout, stderr } = await process;
     if (stderr) {
       console.error(stderr);
-      window.showErrorMessage(stderr)
+      window.showErrorMessage(stderr);
     }
     this.processes.delete(document);
 
@@ -102,7 +102,7 @@ export default class Linter {
     let match = REGEX.exec(output);
     while (match !== null) {
       const severity =
-        match[2] === "W"
+        match[2] === 'W'
           ? DiagnosticSeverity.Warning
           : DiagnosticSeverity.Error;
       const line = Math.max(Number.parseInt(match[1], 10) - 1, 0);

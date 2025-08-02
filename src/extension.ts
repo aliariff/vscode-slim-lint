@@ -1,7 +1,7 @@
-"use strict";
+'use strict';
 
-import * as vscode from "vscode";
-import Linter from "./linter";
+import * as vscode from 'vscode';
+import Linter from './linter';
 
 export function activate(context: vscode.ExtensionContext) {
   const linter = new Linter();
