@@ -1,0 +1,11 @@
+doctype html
+html
+  head
+    title Test File
+  body
+    div
+      p This line is intentionally too long and should trigger a linting warning if the line length rule is enabled in the slim-lint configuration and exceeds the maximum line length limit of 80 characters
+    div
+      p Another line that might have issues with spacing or formatting  
+    div
+      p This line has no proper indentation which should trigger a linting error

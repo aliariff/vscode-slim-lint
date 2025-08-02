@@ -59,10 +59,12 @@ export default class Linter {
       workspace.getConfiguration('slimLint').configurationPath;
     const [command, ...args] = executablePath.split(/\s+/);
 
-    if (configurationPath === '.slim-lint.yml' && workspace.workspaceFolders) {
-      configurationPath =
-        workspace.workspaceFolders[0].uri.fsPath + '/' + configurationPath;
+    // Always use the repo root .slim-lint.yml if the config path is relative
+    if (configurationPath === '.slim-lint.yml') {
+      // Use process.cwd() to get the repo root directory
+      configurationPath = process.cwd() + '/' + configurationPath;
     }
+
     if (fs.existsSync(configurationPath)) {
       args.push('--config', configurationPath);
     } else {
@@ -71,17 +73,17 @@ export default class Linter {
       );
     }
 
-    let cwd = workspace.workspaceFolders
-      ? workspace.workspaceFolders[0].uri.fsPath
-      : '/';
+    // Use the repo root as working directory
+    const cwd = process.cwd();
 
-    const process = execa(command, [...args, document.uri.fsPath], {
+    const execaProcess = execa(command, [...args, document.uri.fsPath], { // Renamed variable
       reject: false,
       cwd,
     });
 
-    this.processes.set(document, process);
-    const { stdout, stderr } = await process;
+    this.processes.set(document, execaProcess); // Used renamed variable
+    const { stdout, stderr } = await execaProcess; // Used renamed variable
+    
     if (stderr) {
       console.error(stderr);
       window.showErrorMessage(stderr);
@@ -93,7 +95,10 @@ export default class Linter {
     }
 
     this.collection.delete(document.uri);
-    this.collection.set(document.uri, this.parse(stdout, document));
+    
+    const parsedDiagnostics = this.parse(stdout, document);
+    
+    this.collection.set(document.uri, parsedDiagnostics);
   }
 
   private parse(output: string, document: TextDocument): Diagnostic[] {

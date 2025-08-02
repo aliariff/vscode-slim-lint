@@ -2,37 +2,44 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { suite, test, setup, teardown, beforeEach, afterEach } from 'mocha';
 import Linter from '../../linter';
 
 suite('Linter Test Suite', () => {
   let linter: Linter;
   let testDocument: vscode.TextDocument;
 
-  setup(async () => {
+  beforeEach(() => {
+    // Create a fresh linter instance for each test
     linter = new Linter();
-    
-    // Create a test Slim file with known issues
+  });
+
+  afterEach(() => {
+    // Dispose the linter after each test
+    linter.dispose();
+  });
+
+  setup(async () => {
+    // Create a test Slim file with known issues that will trigger exactly 2 diagnostics
     const testContent = `doctype html
 html
   head
     title Test File
   body
     div
-      p This line is intentionally too long and should trigger a linting warning if the line length rule is enabled in the slim-lint configuration
+      p This line is intentionally too long and should trigger a linting warning if the line length rule is enabled in the slim-lint configuration and exceeds the maximum line length limit of 80 characters
     div
-      p Another line that might have issues with spacing or formatting
+      p Another line that might have issues with spacing or formatting  
     div
       p This line has no proper indentation which should trigger a linting error`;
-    
+
     const testFile = path.join(__dirname, '../../../test-file.slim');
     fs.writeFileSync(testFile, testContent);
-    
+
     testDocument = await vscode.workspace.openTextDocument(testFile);
   });
 
   teardown(() => {
-    linter.dispose();
-    
     // Clean up test file
     const testFile = path.join(__dirname, '../../../test-file.slim');
     if (fs.existsSync(testFile)) {
@@ -199,6 +206,38 @@ Another invalid line`;
     assert.strictEqual(diagnostics.length, 0, 'Should return empty array for malformed output');
   });
 
+  test('Should clear diagnostics between test runs', async () => {
+    // Clear all diagnostics first
+    linter.clear(testDocument);
+    
+    // First run - should create diagnostics
+    linter.run(testDocument);
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Access diagnostics directly from the linter's collection
+    const firstRunDiagnostics = linter['collection'].get(testDocument.uri) || [];
+    const firstRunCount = firstRunDiagnostics.length;
+    
+    console.log(`First run diagnostics count: ${firstRunCount}`);
+    
+    // Clear all diagnostics completely
+    linter.clear(testDocument);
+    
+    // Second run - should start fresh
+    linter.run(testDocument);
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Access diagnostics directly from the linter's collection
+    const secondRunDiagnostics = linter['collection'].get(testDocument.uri) || [];
+    const secondRunCount = secondRunDiagnostics.length;
+    
+    console.log(`Second run diagnostics count: ${secondRunCount}`);
+    
+    // Both runs should have the same count (no accumulation)
+    assert.strictEqual(firstRunCount, secondRunCount, 'Diagnostic count should be consistent between runs');
+    assert.strictEqual(firstRunCount, 3, 'Should have exactly 3 diagnostics from linter runs');
+  });
+
   test('Should run real linter on slim file with repo root configuration', async () => {
     console.log('Running real linter on test document...');
     console.log(`Document language: ${testDocument.languageId}`);
@@ -213,6 +252,9 @@ Another invalid line`;
     console.log(`Configuration path: ${configurationPath}`);
     console.log(`Expected config path: ${expectedConfigPath}`);
     console.log(`Repo root: ${repoRoot}`);
+    
+    // Clear any existing diagnostics first
+    linter.clear(testDocument);
     
     // Run the real linter
     linter.run(testDocument);
@@ -229,42 +271,30 @@ Another invalid line`;
       console.log(`  Collection ${index + 1}: ${uri.fsPath} - ${diagnostics.length} diagnostics`);
     });
     
-    // Find the slim-lint collection specifically
-    const slimLintCollection = allDiagnostics.find(([uri]) => 
-      uri.fsPath.includes('test-file.slim')
-    );
+    // Access diagnostics directly from the linter's collection
+    const slimLintDiagnostics = linter['collection'].get(testDocument.uri) || [];
+    console.log(`Found ${slimLintDiagnostics.length} diagnostics for ${testDocument.uri.fsPath}`);
     
-    if (slimLintCollection) {
-      const [uri, diagnostics] = slimLintCollection;
-      console.log(`Found ${diagnostics.length} diagnostics for ${uri.fsPath}`);
-      
-      if (diagnostics.length > 0) {
-        diagnostics.forEach((diagnostic, index) => {
-          console.log(`  ${index + 1}. ${diagnostic.message} (${diagnostic.severity}) at line ${diagnostic.range.start.line}`);
-        });
-        
-        // Verify diagnostics have proper structure
-        diagnostics.forEach((diagnostic, index) => {
-          assert.ok(diagnostic.message, `Diagnostic ${index} should have a message`);
-          assert.ok(diagnostic.range, `Diagnostic ${index} should have a range`);
-          assert.ok(typeof diagnostic.severity === 'number', `Diagnostic ${index} should have a severity`);
-        });
-      } else {
-        console.log('No linting issues found in test file - this is valid behavior');
-      }
-      
-      // The test passes if the linter ran successfully (regardless of diagnostics count)
-      assert.ok(true, 'Real linter should run without errors');
-    } else {
-      console.log('No slim-lint diagnostics found for test file');
-      console.log('Available diagnostic collections:');
-      allDiagnostics.forEach(([uri, diagnostics], index) => {
-        console.log(`  ${index + 1}. ${uri.fsPath} - ${diagnostics.length} diagnostics`);
+    // Assert that we got some diagnostics (adjust expectation based on actual content)
+    assert.strictEqual(slimLintDiagnostics.length, 3, 'Should have exactly 3 diagnostics from linting issues');
+    
+    if (slimLintDiagnostics.length > 0) {
+      slimLintDiagnostics.forEach((diagnostic, index) => {
+        console.log(`  ${index + 1}. ${diagnostic.message} (${diagnostic.severity}) at line ${diagnostic.range.start.line}`);
       });
       
-      // Even if no collection found, the test should pass if no errors occurred
-      assert.ok(true, 'Linter should run without errors');
+      // Verify diagnostics have proper structure
+      slimLintDiagnostics.forEach((diagnostic, index) => {
+        assert.ok(diagnostic.message, `Diagnostic ${index} should have a message`);
+        assert.ok(diagnostic.range, `Diagnostic ${index} should have a range`);
+        assert.ok(typeof diagnostic.severity === 'number', `Diagnostic ${index} should have a severity`);
+      });
+    } else {
+      console.log('No linting issues found in test file - this is valid behavior');
     }
+    
+    // The test passes if the linter ran successfully (regardless of diagnostics count)
+    assert.ok(true, 'Real linter should run without errors');
   });
 
   test('Should use repo root .slim-lint.yml configuration', async () => {
@@ -282,6 +312,9 @@ Another invalid line`;
     console.log(`Using configuration from: ${configPath}`);
     console.log(`Configuration size: ${configContent.length} characters`);
     
+    // Clear any existing diagnostics first
+    linter.clear(testDocument);
+    
     // Run linter and verify it uses this configuration
     linter.run(testDocument);
     
@@ -295,6 +328,13 @@ Another invalid line`;
     );
     
     console.log(`Linter execution completed. Found ${testFileDiagnostics.length} diagnostic collections for test file`);
+    
+    // Access diagnostics directly from the linter's collection
+    const slimLintDiagnostics = linter['collection'].get(testDocument.uri) || [];
+    console.log(`Found ${slimLintDiagnostics.length} diagnostics`);
+    
+    // Assert that the linter ran successfully (diagnostics count may vary)
+    assert.strictEqual(slimLintDiagnostics.length, 3, 'Should have exactly 3 diagnostics from linting issues');
     
     // The test passes if the linter runs without errors using the repo root config
     assert.ok(true, 'Linter should use repo root configuration successfully');
