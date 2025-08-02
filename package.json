@@ -22,6 +22,19 @@
     ],
     "main": "./out/extension",
     "contributes": {
+        "languages": [
+            {
+                "id": "slim",
+                "aliases": [
+                    "Slim",
+                    "slim"
+                ],
+                "extensions": [
+                    ".slim",
+                    ".html.slim"
+                ]
+            }
+        ],
         "configuration": {
             "type": "object",
             "title": "Slim Lint Configuration",
