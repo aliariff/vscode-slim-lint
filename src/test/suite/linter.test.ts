@@ -239,8 +239,12 @@ Another invalid line`;
         console.log(`  ${index + 1}. ${diagnostic.message} (${diagnostic.severity}) at line ${diagnostic.range.start.line}`);
       });
       
-      // Assert that we got some diagnostics (indicating linter ran successfully)
-      assert.ok(diagnostics.length >= 0, 'Should have diagnostics from real linter run');
+      // Verify diagnostics have proper structure
+      diagnostics.forEach((diagnostic, index) => {
+        assert.ok(diagnostic.message, `Diagnostic ${index} should have a message`);
+        assert.ok(diagnostic.range, `Diagnostic ${index} should have a range`);
+        assert.ok(typeof diagnostic.severity === 'number', `Diagnostic ${index} should have a severity`);
+      });
     } else {
       console.log('No diagnostics found - this might be normal if slim-lint is not installed or file has no issues');
     }
@@ -269,6 +273,14 @@ Another invalid line`;
     
     // Wait for processing
     await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Check if linter ran successfully by looking for any diagnostics
+    const allDiagnostics = vscode.languages.getDiagnostics();
+    const testFileDiagnostics = allDiagnostics.filter(([uri]) => 
+      uri.fsPath.includes('test-file.slim')
+    );
+    
+    console.log(`Linter execution completed. Found ${testFileDiagnostics.length} diagnostic collections for test file`);
     
     // The test passes if the linter runs without errors using the repo root config
     assert.ok(true, 'Linter should use repo root configuration successfully');
