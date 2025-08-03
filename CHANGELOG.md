@@ -25,28 +25,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Real-time linting support
-- Error and warning highlighting
+- Real-time linting support (on save and open)
+- Error and warning highlighting with diagnostic collection
 - Configuration file support (.slim-lint.yml)
 - Multiple executable support (slim-lint, bundle exec, gem exec)
 - Cross-platform compatibility (Windows, macOS, Linux)
-- Performance optimizations with timeout protection
-- Comprehensive test suite
 - TypeScript implementation
+- Process management with WeakMap for cleanup
 
 ### Changed
 
 - Complete rewrite from previous versions
-- Improved error handling and user feedback
+- Improved error handling with stderr display
 - Enhanced configuration validation
-- Better logging and debugging support
+- Better process management and cleanup
 
 ### Fixed
 
-- Various stability and performance issues
-- Configuration path resolution
-- Executable validation
-- Error message clarity
+- Configuration path resolution for workspace folders
+- Process cleanup to prevent hanging
+- Error message display in VS Code
+- Document change detection during linting
 
 ## [0.2.0] - Previous Release
 
@@ -72,21 +71,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Version 0.3.0
 
-This is a major release that completely rewrites the extension in TypeScript with improved functionality, better error handling, and comprehensive testing.
+This is a major release that completely rewrites the extension in TypeScript with improved functionality, better error handling, and process management.
 
 **Key Features:**
 
-- Real-time linting as you type
+- Real-time linting on save and open
+- Error and warning highlighting with diagnostic collection
 - Support for multiple slim-lint executable types
-- Comprehensive configuration validation
+- Configuration file support (.slim-lint.yml)
 - Cross-platform compatibility
-- Performance optimizations
+- Process management with cleanup
 
 **Breaking Changes:**
 
 - Requires VS Code 1.32.0 or higher
-- Configuration format has changed
 - New TypeScript implementation
+- Configuration format has changed
 
 **Migration Guide:**
 If you're upgrading from a previous version:
