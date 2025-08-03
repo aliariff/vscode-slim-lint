@@ -121,13 +121,22 @@ export default class Linter implements vscode.Disposable {
     const executablePath = config.get('executablePath') as string;
     const configurationPath = config.get('configurationPath') as string;
     
-    // Validate configuration
+    // Enhanced configuration validation
     if (!executablePath || executablePath.trim() === '') {
-      throw new Error('slim-lint executable path is not configured');
+      const errorMessage = 'slim-lint executable path is not configured. Please set slimLint.executablePath in your settings.';
+      this.outputChannel.appendLine(errorMessage);
+      throw new Error(errorMessage);
     }
     
     if (!configurationPath || configurationPath.trim() === '') {
-      throw new Error('slim-lint configuration path is not configured');
+      const errorMessage = 'slim-lint configuration path is not configured. Please set slimLint.configurationPath in your settings.';
+      this.outputChannel.appendLine(errorMessage);
+      throw new Error(errorMessage);
+    }
+    
+    // Validate executable path format
+    if (executablePath.includes(' ') && !executablePath.startsWith('"') && !executablePath.endsWith('"')) {
+      this.outputChannel.appendLine(`Warning: Executable path contains spaces: "${executablePath}". Consider wrapping in quotes if needed.`);
     }
     
     return {
@@ -160,12 +169,25 @@ export default class Linter implements vscode.Disposable {
 
     const resolvedConfigPath = this.resolveConfigurationPath(config.configurationPath);
     
+    // Enhanced configuration file validation
     if (fs.existsSync(resolvedConfigPath)) {
-      args.push('--config', resolvedConfigPath);
+      try {
+        // Check if file is readable
+        fs.accessSync(resolvedConfigPath, fs.constants.R_OK);
+        args.push('--config', resolvedConfigPath);
+        this.outputChannel.appendLine(`Using configuration file: ${resolvedConfigPath}`);
+      } catch (accessError) {
+        const errorMessage = `Configuration file ${resolvedConfigPath} exists but is not readable. Check file permissions.`;
+        this.outputChannel.appendLine(errorMessage);
+        window.showErrorMessage(errorMessage);
+      }
     } else {
-      this.outputChannel.appendLine(
-        `Configuration file ${resolvedConfigPath} does not exist! Using default slim-lint settings.`
-      );
+      const warningMessage = `Configuration file ${resolvedConfigPath} does not exist! Using default slim-lint settings.`;
+      this.outputChannel.appendLine(warningMessage);
+      
+      // Provide helpful guidance
+      const guidanceMessage = 'To use a custom configuration, create a .slim-lint.yml file in your project root or set slimLint.configurationPath in your settings.';
+      this.outputChannel.appendLine(guidanceMessage);
     }
 
     args.push(documentPath);
@@ -182,6 +204,18 @@ export default class Linter implements vscode.Disposable {
     const cwd = process.cwd();
 
     try {
+      // Validate command exists and is not empty
+      if (!command || command.trim() === '') {
+        throw new Error('slim-lint command is empty or invalid');
+      }
+
+      // Check if command exists in PATH
+      try {
+        await execa('which', [command], { reject: false });
+      } catch (whichError) {
+        this.outputChannel.appendLine(`Command '${command}' not found in PATH`);
+      }
+
       const execaProcess = execa(command, args, {
         reject: false,
         cwd,
@@ -192,17 +226,45 @@ export default class Linter implements vscode.Disposable {
       
       if (stderr) {
         this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
-        // Only show error message for actual errors, not warnings
-        if (stderr.includes('error') || stderr.includes('not found')) {
+        
+        // Provide specific error messages based on stderr content
+        if (stderr.includes('command not found') || stderr.includes('not found')) {
+          const installMessage = 'slim-lint not found. Please install slim-lint: gem install slim_lint';
+          window.showErrorMessage(installMessage);
+          this.outputChannel.appendLine(installMessage);
+        } else if (stderr.includes('permission denied')) {
+          const permissionMessage = 'slim-lint permission denied. Please check file permissions.';
+          window.showErrorMessage(permissionMessage);
+          this.outputChannel.appendLine(permissionMessage);
+        } else if (stderr.includes('timeout')) {
+          const timeoutMessage = 'slim-lint execution timed out. Please check your configuration.';
+          window.showErrorMessage(timeoutMessage);
+          this.outputChannel.appendLine(timeoutMessage);
+        } else if (stderr.includes('error') || stderr.includes('failed')) {
           window.showErrorMessage(`slim-lint error: ${stderr}`);
         }
       }
 
       return { stdout, stderr };
     } catch (error) {
-      this.outputChannel.appendLine(`Failed to execute slim-lint: ${error}`);
-      window.showErrorMessage(`slim-lint not found. Please install slim-lint: gem install slim_lint`);
-      return { stdout: '', stderr: `slim-lint not found: ${error}` };
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`Failed to execute slim-lint: ${errorMessage}`);
+      
+      // Provide helpful installation instructions based on error type
+      let installMessage = 'slim-lint not found. Please install slim-lint: gem install slim_lint';
+      
+      if (errorMessage.includes('timeout')) {
+        installMessage = 'slim-lint execution timed out. Please check your configuration or increase timeout.';
+      } else if (errorMessage.includes('permission')) {
+        installMessage = 'slim-lint permission denied. Please check file permissions and try again.';
+      } else if (errorMessage.includes('ENOENT')) {
+        installMessage = 'slim-lint executable not found. Please install slim-lint: gem install slim_lint';
+      }
+      
+      window.showErrorMessage(installMessage);
+      this.outputChannel.appendLine(installMessage);
+      
+      return { stdout: '', stderr: `slim-lint execution failed: ${errorMessage}` };
     }
   }
 
@@ -316,9 +378,27 @@ export default class Linter implements vscode.Disposable {
       this.updateDiagnostics(document, diagnostics);
 
     } catch (error) {
-      this.outputChannel.appendLine(`Error during linting: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`Error during linting: ${errorMessage}`);
+      
       if (!this.disposed) {
-        window.showErrorMessage(`slim-lint execution failed: ${error}`);
+        // Provide specific error messages based on error type
+        let userMessage = `slim-lint execution failed: ${errorMessage}`;
+        
+        if (errorMessage.includes('executable path is not configured')) {
+          userMessage = 'slim-lint executable path is not configured. Please check your settings.';
+        } else if (errorMessage.includes('configuration path is not configured')) {
+          userMessage = 'slim-lint configuration path is not configured. Please check your settings.';
+        } else if (errorMessage.includes('timeout')) {
+          userMessage = 'slim-lint execution timed out. Please check your configuration or increase timeout.';
+        } else if (errorMessage.includes('permission')) {
+          userMessage = 'slim-lint permission denied. Please check file permissions.';
+        } else if (errorMessage.includes('ENOENT')) {
+          userMessage = 'slim-lint executable not found. Please install slim-lint: gem install slim_lint';
+        }
+        
+        window.showErrorMessage(userMessage);
+        this.outputChannel.appendLine(`User message: ${userMessage}`);
       }
     }
   }

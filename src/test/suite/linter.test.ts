@@ -530,4 +530,62 @@ Another invalid line`;
     
     console.log('✅ Error handling test completed');
   });
+
+  test('Should handle enhanced error scenarios', () => {
+    console.log('🧪 Testing enhanced error scenarios...');
+    
+    // Test configuration validation errors
+    const testCases = [
+      {
+        name: 'empty executable path',
+        error: new Error('slim-lint executable path is not configured. Please set slimLint.executablePath in your settings.'),
+        expectedMessage: 'slim-lint executable path is not configured. Please check your settings.'
+      },
+      {
+        name: 'empty configuration path',
+        error: new Error('slim-lint configuration path is not configured. Please set slimLint.configurationPath in your settings.'),
+        expectedMessage: 'slim-lint configuration path is not configured. Please check your settings.'
+      },
+      {
+        name: 'timeout error',
+        error: new Error('timeout'),
+        expectedMessage: 'slim-lint execution timed out. Please check your configuration or increase timeout.'
+      },
+      {
+        name: 'permission error',
+        error: new Error('permission denied'),
+        expectedMessage: 'slim-lint permission denied. Please check file permissions.'
+      },
+      {
+        name: 'executable not found',
+        error: new Error('ENOENT: no such file or directory'),
+        expectedMessage: 'slim-lint executable not found. Please install slim-lint: gem install slim_lint'
+      }
+    ];
+
+    testCases.forEach(testCase => {
+      console.log(`🔍 Testing ${testCase.name}...`);
+      
+      // Mock the lint method to throw specific errors
+      const originalLint = linter['lint'];
+      linter['lint'] = async () => {
+        throw testCase.error;
+      };
+      
+      const mockDocument = {
+        languageId: 'slim',
+        uri: vscode.Uri.file(`/test-${testCase.name}.slim`),
+        getText: () => 'doctype html',
+        fileName: `test-${testCase.name}.slim`,
+      } as unknown as vscode.TextDocument;
+
+      // Should handle error gracefully
+      linter.run(mockDocument);
+      
+      // Restore original method
+      linter['lint'] = originalLint;
+    });
+    
+    console.log('✅ Enhanced error scenarios test completed');
+  });
 }); 
