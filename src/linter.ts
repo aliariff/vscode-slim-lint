@@ -75,9 +75,12 @@ export default class Linter implements vscode.Disposable {
     }
 
     if (!this.shouldLintDocument(document)) {
-      this.outputChannel.appendLine(
-        `Skipping lint for non-slim file: ${document.fileName}`
-      );
+      // Only log for actual files, not output channels or other internal documents
+      if (this.isFileDocument(document)) {
+        this.outputChannel.appendLine(
+          `Skipping lint for non-slim file: ${document.fileName}`
+        );
+      }
       return;
     }
 
@@ -108,7 +111,8 @@ export default class Linter implements vscode.Disposable {
    * @returns True if the document should be linted
    */
   private shouldLintDocument(document: TextDocument): boolean {
-    return document.languageId === SLIM_LANGUAGE_ID;
+    // Only lint slim files that are actual files (not output channels, etc.)
+    return document.languageId === SLIM_LANGUAGE_ID && this.isFileDocument(document);
   }
 
   /**
