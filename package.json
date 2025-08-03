@@ -1,84 +1,84 @@
 {
-    "name": "slim-lint",
-    "displayName": "Slim Lint",
-    "description": "Slim Linter for Visual Studio Code",
-    "version": "0.3.0",
-    "publisher": "aliariff",
-    "license": "MIT",
-    "icon": "images/icon.png",
-    "bugs": "https://github.com/aliariff/vscode-slim-lint/issues",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/aliariff/vscode-slim-lint"
-    },
-    "engines": {
-        "vscode": "^1.32.0"
-    },
-    "categories": [
-        "Linters"
-    ],
-    "activationEvents": [
-        "onLanguage:slim"
-    ],
-    "main": "./out/extension",
-    "contributes": {
-        "languages": [
-            {
-                "id": "slim",
-                "aliases": [
-                    "Slim",
-                    "slim"
-                ],
-                "extensions": [
-                    ".slim",
-                    ".html.slim"
-                ]
-            }
+  "name": "slim-lint",
+  "displayName": "Slim Lint",
+  "description": "Slim Linter for Visual Studio Code",
+  "version": "0.3.0",
+  "publisher": "aliariff",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "bugs": "https://github.com/aliariff/vscode-slim-lint/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aliariff/vscode-slim-lint"
+  },
+  "engines": {
+    "vscode": "^1.32.0"
+  },
+  "categories": [
+    "Linters"
+  ],
+  "activationEvents": [
+    "onLanguage:slim"
+  ],
+  "main": "./out/extension",
+  "contributes": {
+    "languages": [
+      {
+        "id": "slim",
+        "aliases": [
+          "Slim",
+          "slim"
         ],
-        "configuration": {
-            "type": "object",
-            "title": "Slim Lint Configuration",
-            "properties": {
-                "slimLint.executablePath": {
-                    "type": "string",
-                    "default": "slim-lint",
-                    "description": "Path to slim-lint executable"
-                },
-                "slimLint.configurationPath": {
-                    "type": "string",
-                    "default": ".slim-lint.yml",
-                    "description": "Path to slim-lint configuration file"
-                }
-            }
+        "extensions": [
+          ".slim",
+          ".html.slim"
+        ]
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Slim Lint Configuration",
+      "properties": {
+        "slimLint.executablePath": {
+          "type": "string",
+          "default": "slim-lint",
+          "description": "Path to slim-lint executable"
+        },
+        "slimLint.configurationPath": {
+          "type": "string",
+          "default": ".slim-lint.yml",
+          "description": "Path to slim-lint configuration file"
         }
-    },
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "lint": "eslint src --ext .ts",
-        "lint:fix": "eslint src --ext .ts --fix",
-        "format": "prettier --write \"src/**/*.{ts,js,json}\"",
-        "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
-        "watch": "tsc -watch -p ./",
-        "pretest": "npm run compile",
-        "test": "node ./out/test/runTest.js"
-    },
-    "devDependencies": {
-        "@types/glob": "^8.1.0",
-        "@types/mocha": "^10.0.10",
-        "@types/node": "^20.0.0",
-        "@types/vscode": "^1.102.0",
-        "@typescript-eslint/eslint-plugin": "^7.0.0",
-        "@typescript-eslint/parser": "^7.0.0",
-        "@vscode/test-electron": "^2.3.0",
-        "eslint": "^8.56.0",
-        "glob": "^10.3.10",
-        "mocha": "^11.7.1",
-        "prettier": "^3.0.0",
-        "source-map-support": "^0.5.21",
-        "typescript": "^5.4.5"
-    },
-    "dependencies": {
-        "execa": "^9.6.0"
+      }
     }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.102.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vscode/test-electron": "^2.3.0",
+    "eslint": "^8.56.0",
+    "glob": "^10.3.10",
+    "mocha": "^11.7.1",
+    "prettier": "^3.0.0",
+    "source-map-support": "^0.5.21",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "execa": "^9.6.0"
+  }
 }

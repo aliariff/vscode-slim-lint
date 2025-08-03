@@ -1,17 +1,14 @@
 {
-    "compilerOptions": {
-        "module": "commonjs",
-        "outDir": "out",
-        "rootDir": "src",
-        "sourceMap": true,
-        "strict": false,
-        "target": "es6",
-        "skipLibCheck": true,
-        "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true
-    },
-    "exclude": [
-        "node_modules",
-        ".vscode-test"
-    ]
+  "compilerOptions": {
+    "module": "commonjs",
+    "outDir": "out",
+    "rootDir": "src",
+    "sourceMap": true,
+    "strict": false,
+    "target": "es6",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "exclude": ["node_modules", ".vscode-test"]
 }

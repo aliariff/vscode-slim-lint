@@ -1,39 +1,35 @@
 // Place your settings in this file to overwrite default and user settings.
 {
-    "files.exclude": {
-        "out": false // set this to true to hide the "out" folder with the compiled JS files
-    },
-    "search.exclude": {
-        "out": true // set this to false to include "out" folder in search results
-    },
-    // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
-    "typescript.tsc.autoDetect": "off",
-    
-    // ESLint settings
-    "eslint.validate": [
-        "typescript"
-    ],
-    "eslint.workingDirectories": [
-        "."
-    ],
-    
-    // Editor settings for better development experience
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": "explicit"
-    },
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    
-    // TypeScript settings
-    "typescript.preferences.includePackageJsonAutoImports": "on",
-    "typescript.suggest.autoImports": true,
-    
-    // File associations
-    "files.associations": {
-        "*.slim": "slim"
-    },
-    
-    // Git settings
-    "git.enableSmartCommit": true,
-    "git.confirmSync": false
+  "files.exclude": {
+    "out": false // set this to true to hide the "out" folder with the compiled JS files
+  },
+  "search.exclude": {
+    "out": true // set this to false to include "out" folder in search results
+  },
+  // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
+  "typescript.tsc.autoDetect": "off",
+
+  // ESLint settings
+  "eslint.validate": ["typescript"],
+  "eslint.workingDirectories": ["."],
+
+  // Editor settings for better development experience
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // TypeScript settings
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.suggest.autoImports": true,
+
+  // File associations
+  "files.associations": {
+    "*.slim": "slim"
+  },
+
+  // Git settings
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false
 }

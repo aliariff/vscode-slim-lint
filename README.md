@@ -12,5 +12,5 @@ gem install slim_lint
 
 ## Extension Settings
 
-* `slimLint.executablePath`: Path to slim-lint executable (default: slim-lint)
-* `slimLint.configurationPath`: Path to slim-lint configuration file (default: .slim-lint.yml)
+- `slimLint.executablePath`: Path to slim-lint executable (default: slim-lint)
+- `slimLint.configurationPath`: Path to slim-lint configuration file (default: .slim-lint.yml)

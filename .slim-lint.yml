@@ -3,18 +3,18 @@ linters:
   LineLength:
     enabled: true
     max: 120
-    
+
   TrailingWhitespace:
     enabled: true
-    
+
   TrailingBlankLines:
     enabled: true
-    
+
   Tab:
     enabled: true
-    
+
   EmptyLines:
     enabled: true
-    
+
   RuboCop:
-    enabled: false  # Disable RuboCop for tests to avoid external dependencies
+    enabled: false # Disable RuboCop for tests to avoid external dependencies
