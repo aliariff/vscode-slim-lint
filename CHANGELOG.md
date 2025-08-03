@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2025-08-03
+
+### Fixed
+
+- **CI**: Fixed test compilation issue in CI by compiling test files separately from extension
+- Updated package.json scripts to compile tests with TypeScript separately from webpack bundling
+- Added compile:tests script for test compilation only
+- Updated pretest to use compile:tests instead of full compile
+- Updated GitHub workflow to use the new compile command
+- Ensures test files are available for CI runs
+
 ## [0.4.1] - 2025-08-03
 
 ### Fixed
