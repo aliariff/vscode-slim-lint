@@ -2,7 +2,7 @@
 
 A Visual Studio Code extension that provides real-time linting for Slim template files using [slim-lint](https://github.com/sds/slim-lint).
 
-![Demo GIF](https://drive.google.com/uc?export=view&id=1-2YvJzWVsaBu9xOLLFc1OTU7UobOgTmJ)
+![Demo GIF](images/demo.gif)
 
 ## Features
 
