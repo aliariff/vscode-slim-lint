@@ -350,13 +350,21 @@ export default class Linter implements vscode.Disposable {
         );
       }
 
-      const execaProcess = execa(command, args, {
+      const result = await execa(command, args, {
         reject: false,
         cwd,
         timeout: LINT_TIMEOUT,
       });
 
-      const { stdout, stderr } = await execaProcess;
+      const { stdout, stderr, exitCode } = result;
+
+      // Check if command failed
+      if (exitCode !== 0) {
+        this.outputChannel.appendLine(`slim-lint failed with exit code: ${exitCode}`);
+        if (process.env.NODE_ENV === 'test') {
+          console.log(`slim-lint failed with exit code: ${exitCode}`);
+        }
+      }
 
       if (stderr) {
         this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
