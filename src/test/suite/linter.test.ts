@@ -52,15 +52,41 @@ suite('Linter Test Suite', () => {
   setup(async () => {
     outputChannel = vscode.window.createOutputChannel('Slim Lint Test');
     linter = new Linter(outputChannel);
+
+    // Configure slim-lint executable path for tests using global settings
+    const config = vscode.workspace.getConfiguration('slimLint');
+    await config.update(
+      'executablePath',
+      'bundle exec slim-lint',
+      vscode.ConfigurationTarget.Global
+    );
+    await config.update(
+      'configurationPath',
+      '.slim-lint.yml',
+      vscode.ConfigurationTarget.Global
+    );
   });
 
-  teardown(() => {
+  teardown(async () => {
     if (linter) {
       linter.dispose();
     }
     if (outputChannel) {
       outputChannel.dispose();
     }
+
+    // Reset slim-lint configuration after tests
+    const config = vscode.workspace.getConfiguration('slimLint');
+    await config.update(
+      'executablePath',
+      'slim-lint',
+      vscode.ConfigurationTarget.Global
+    );
+    await config.update(
+      'configurationPath',
+      '.slim-lint.yml',
+      vscode.ConfigurationTarget.Global
+    );
   });
 
   test('Should not run on non-slim files', async () => {
