@@ -39,4 +39,4 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high
-        continue-on-error: true 
+        continue-on-error: true
