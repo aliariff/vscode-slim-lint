@@ -5,13 +5,14 @@ All notable changes to the "Slim Lint for VS Code" extension will be documented 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.0] - Unreleased
 
 ### Added
 
 - Comprehensive documentation improvements
-- Contributing guidelines
-- Troubleshooting section
+- Contributing guidelines (CONTRIBUTING.md)
+- Troubleshooting guide (TROUBLESHOOTING.md)
+- API documentation (API.md)
 - Performance optimization tips
 - Cross-platform support documentation
 
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced README with installation instructions
 - Improved configuration examples
 - Better error handling and user feedback
+- Updated CHANGELOG.md to follow Keep a Changelog standards
 
 ## [0.3.0] - 2024-01-XX
 
@@ -68,6 +70,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## Release Notes
+
+### Version 0.4.0
+
+This is a documentation-focused release that significantly improves the user experience and developer onboarding.
+
+**Key Improvements:**
+
+- Complete README rewrite with comprehensive installation and usage guides
+- New contributing guidelines for developers
+- Dedicated troubleshooting guide with common issues and solutions
+- Comprehensive API documentation for extension development
+- Enhanced changelog following Keep a Changelog standards
+
+**Impact:**
+
+- **Users**: Clear installation, configuration, and troubleshooting guidance
+- **Contributors**: Comprehensive development setup and contribution guidelines
+- **Maintainers**: Structured documentation management and quality standards
 
 ### Version 0.3.0
 
