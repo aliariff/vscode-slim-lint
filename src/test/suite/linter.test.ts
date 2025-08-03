@@ -7,7 +7,6 @@ import Linter from '../../linter';
 
 suite('Linter Test Suite', () => {
   let linter: Linter;
-  let testDocument: vscode.TextDocument;
   let outputChannel: vscode.OutputChannel;
 
   setup(async () => {
@@ -20,12 +19,6 @@ suite('Linter Test Suite', () => {
     // Create a fresh linter instance
     linter = new Linter(outputChannel);
     console.log('✅ Linter instance created');
-
-    // Use fixture file instead of creating dynamically
-    const testFile = path.join(process.cwd(), 'src/test/fixtures/complex-test.slim');
-    console.log(`📁 Loading test fixture: ${testFile}`);
-    testDocument = await vscode.workspace.openTextDocument(testFile);
-    console.log('✅ Test document loaded');
   });
 
   teardown(() => {
@@ -327,20 +320,25 @@ Another invalid line`;
   test('Should run linter and produce real diagnostics from slim-lint execution', async () => {
     console.log('🧪 Testing real slim-lint execution with complex file...');
     
+    // Load the complex test fixture
+    const complexTestFile = path.join(process.cwd(), 'src/test/fixtures/complex-test.slim');
+    console.log(`📁 Loading complex test fixture: ${complexTestFile}`);
+    const complexTestDocument = await vscode.workspace.openTextDocument(complexTestFile);
+    
     // Clear any existing diagnostics first
     console.log('🗑️ Clearing existing diagnostics...');
-    linter.clear(testDocument);
+    linter.clear(complexTestDocument);
     
     // Run the linter
     console.log('⚡ Running linter on complex test file...');
-    linter.run(testDocument);
+    linter.run(complexTestDocument);
     
     // Wait for processing (using longer timeout to ensure slim-lint completes)
     console.log('⏳ Waiting for slim-lint processing (5 seconds)...');
     await new Promise(resolve => setTimeout(resolve, 5000));
     
     // Check if diagnostics were created from real slim-lint execution
-    const diagnostics = linter['collection'].get(testDocument.uri) || [];
+    const diagnostics = linter['collection'].get(complexTestDocument.uri) || [];
     
     console.log(`📊 Real slim-lint execution produced ${diagnostics.length} diagnostics`);
     
