@@ -10,5 +10,10 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true
   },
-  "exclude": ["node_modules", ".vscode-test", "src/extension.ts", "src/linter.ts"]
+  "exclude": [
+    "node_modules",
+    ".vscode-test",
+    "src/extension.ts",
+    "src/linter.ts"
+  ]
 }
