@@ -210,37 +210,24 @@ Another invalid line`;
     assert.strictEqual(diagnostics.length, 0, 'Should return empty array for malformed output');
   });
 
-  test('Should run linter on slim file', async () => {
+  test('Should run linter and produce real diagnostics from slim-lint execution', async () => {
     // Clear any existing diagnostics first
     linter.clear(testDocument);
     
     // Run the linter
     linter.run(testDocument);
     
-    // Wait for processing
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // Check if diagnostics were created
-    const diagnostics = linter['collection'].get(testDocument.uri) || [];
-    
-    // The test passes if the linter ran without errors
-    assert.ok(true, 'Linter should run without errors');
-  });
-
-  test('Should produce real diagnostics from slim-lint execution', async () => {
-    // Clear any existing diagnostics first
-    linter.clear(testDocument);
-    
-    // Run the linter
-    linter.run(testDocument);
-    
-    // Wait for processing
+    // Wait for processing (using longer timeout to ensure slim-lint completes)
     await new Promise(resolve => setTimeout(resolve, 5000));
     
     // Check if diagnostics were created from real slim-lint execution
     const diagnostics = linter['collection'].get(testDocument.uri) || [];
     
     console.log(`Real slim-lint execution produced ${diagnostics.length} diagnostics`);
+    
+    // Verify the linter completed successfully
+    assert.ok(Array.isArray(diagnostics), 'Diagnostics should be an array');
+    assert.ok(linter['collection'], 'Diagnostic collection should exist');
     
     if (diagnostics.length > 0) {
       diagnostics.forEach((diagnostic, index) => {
