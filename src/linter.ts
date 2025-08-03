@@ -360,9 +360,7 @@ export default class Linter implements vscode.Disposable {
 
       // Check if command failed
       if (failed) {
-        this.outputChannel.appendLine(
-          `slim-lint failed with code: ${code}`
-        );
+        this.outputChannel.appendLine(`slim-lint failed with code: ${code}`);
         if (process.env.NODE_ENV === 'test') {
           console.log(`slim-lint failed with code: ${code}`);
         }
