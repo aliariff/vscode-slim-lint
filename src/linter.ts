@@ -139,6 +139,21 @@ export default class Linter implements vscode.Disposable {
       this.outputChannel.appendLine(`Warning: Executable path contains spaces: "${executablePath}". Consider wrapping in quotes if needed.`);
     }
     
+    // Validate executable path structure
+    const [command] = executablePath.split(/\s+/);
+    if (!command || command.trim() === '') {
+      const errorMessage = 'slim-lint executable path is malformed. Please check your slimLint.executablePath setting.';
+      this.outputChannel.appendLine(errorMessage);
+      throw new Error(errorMessage);
+    }
+    
+    // Check for common executable names
+    const validExecutables = ['slim-lint', 'slim_lint', 'bundle', 'gem'];
+    const isKnownExecutable = validExecutables.some(valid => command.includes(valid));
+    if (!isKnownExecutable) {
+      this.outputChannel.appendLine(`Warning: Executable '${command}' is not a known slim-lint executable. Expected: slim-lint, slim_lint, bundle exec slim-lint, or gem exec slim-lint`);
+    }
+    
     return {
       executablePath,
       configurationPath,
@@ -174,6 +189,23 @@ export default class Linter implements vscode.Disposable {
       try {
         // Check if file is readable
         fs.accessSync(resolvedConfigPath, fs.constants.R_OK);
+        
+        // Validate file size (prevent reading extremely large files)
+        const stats = fs.statSync(resolvedConfigPath);
+        const maxSize = 1024 * 1024; // 1MB
+        if (stats.size > maxSize) {
+          const warningMessage = `Configuration file ${resolvedConfigPath} is very large (${Math.round(stats.size / 1024)}KB). This may cause performance issues.`;
+          this.outputChannel.appendLine(warningMessage);
+        }
+        
+        // Validate file extension
+        const validExtensions = ['.yml', '.yaml'];
+        const fileExt = path.extname(resolvedConfigPath).toLowerCase();
+        if (!validExtensions.includes(fileExt)) {
+          const warningMessage = `Configuration file ${resolvedConfigPath} has unexpected extension '${fileExt}'. Expected: .yml or .yaml`;
+          this.outputChannel.appendLine(warningMessage);
+        }
+        
         args.push('--config', resolvedConfigPath);
         this.outputChannel.appendLine(`Using configuration file: ${resolvedConfigPath}`);
       } catch (accessError) {
@@ -188,6 +220,16 @@ export default class Linter implements vscode.Disposable {
       // Provide helpful guidance
       const guidanceMessage = 'To use a custom configuration, create a .slim-lint.yml file in your project root or set slimLint.configurationPath in your settings.';
       this.outputChannel.appendLine(guidanceMessage);
+      
+      // Check if there are any .slim-lint.yml files in the project
+      const projectRoot = process.cwd();
+      const possibleConfigs = ['.slim-lint.yml', '.slim-lint.yaml', 'slim-lint.yml', 'slim-lint.yaml'];
+      const foundConfigs = possibleConfigs.filter(config => fs.existsSync(path.join(projectRoot, config)));
+      
+      if (foundConfigs.length > 0) {
+        const suggestionMessage = `Found potential configuration files: ${foundConfigs.join(', ')}. Consider updating slimLint.configurationPath setting.`;
+        this.outputChannel.appendLine(suggestionMessage);
+      }
     }
 
     args.push(documentPath);
@@ -209,11 +251,53 @@ export default class Linter implements vscode.Disposable {
         throw new Error('slim-lint command is empty or invalid');
       }
 
-      // Check if command exists in PATH
+      // Enhanced executable validation
+      let executableExists = false;
+      let executablePath = '';
+      
       try {
-        await execa('which', [command], { reject: false });
+        // Check if command exists in PATH
+        const { stdout } = await execa('which', [command], { reject: false });
+        if (stdout && stdout.trim()) {
+          executableExists = true;
+          executablePath = stdout.trim();
+          this.outputChannel.appendLine(`Found executable: ${executablePath}`);
+        }
       } catch (whichError) {
         this.outputChannel.appendLine(`Command '${command}' not found in PATH`);
+      }
+      
+      // Additional validation for common slim-lint scenarios
+      if (!executableExists) {
+        // Check if it's a bundle exec command
+        if (command === 'bundle') {
+          try {
+            const { stdout } = await execa('bundle', ['exec', 'slim-lint', '--version'], { reject: false });
+            if (stdout) {
+              executableExists = true;
+              this.outputChannel.appendLine('Found slim-lint via bundle exec');
+            }
+          } catch (bundleError) {
+            this.outputChannel.appendLine('bundle exec slim-lint not available');
+          }
+        }
+        
+        // Check if it's a gem exec command
+        if (command === 'gem') {
+          try {
+            const { stdout } = await execa('gem', ['exec', 'slim-lint', '--version'], { reject: false });
+            if (stdout) {
+              executableExists = true;
+              this.outputChannel.appendLine('Found slim-lint via gem exec');
+            }
+          } catch (gemError) {
+            this.outputChannel.appendLine('gem exec slim-lint not available');
+          }
+        }
+      }
+      
+      if (!executableExists) {
+        this.outputChannel.appendLine(`Warning: Could not verify executable '${command}'. slim-lint may not be installed or not in PATH.`);
       }
 
       const execaProcess = execa(command, args, {

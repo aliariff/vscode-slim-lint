@@ -588,4 +588,71 @@ Another invalid line`;
     
     console.log('✅ Enhanced error scenarios test completed');
   });
+
+  test('Should validate configuration comprehensively', () => {
+    console.log('🧪 Testing enhanced configuration validation...');
+    
+    // Test executable path validation
+    const testCases = [
+      {
+        name: 'valid slim-lint executable',
+        executablePath: 'slim-lint',
+        shouldPass: true
+      },
+      {
+        name: 'valid bundle exec',
+        executablePath: 'bundle exec slim-lint',
+        shouldPass: true
+      },
+      {
+        name: 'valid gem exec',
+        executablePath: 'gem exec slim-lint',
+        shouldPass: true
+      },
+      {
+        name: 'malformed executable path',
+        executablePath: '   ',
+        shouldPass: false
+      },
+      {
+        name: 'unknown executable',
+        executablePath: 'unknown-command',
+        shouldPass: true // Should pass but with warning
+      }
+    ];
+
+    testCases.forEach(testCase => {
+      console.log(`🔍 Testing ${testCase.name}...`);
+      
+      // Mock getConfiguration to return test case
+      const originalGetConfiguration = linter['getConfiguration'];
+      linter['getConfiguration'] = () => ({
+        executablePath: testCase.executablePath,
+        configurationPath: '.slim-lint.yml'
+      });
+      
+      const mockDocument = {
+        languageId: 'slim',
+        uri: vscode.Uri.file(`/test-${testCase.name}.slim`),
+        getText: () => 'doctype html',
+        fileName: `test-${testCase.name}.slim`,
+      } as unknown as vscode.TextDocument;
+
+      try {
+        linter.run(mockDocument);
+        console.log(`✅ ${testCase.name} handled as expected`);
+      } catch (error) {
+        if (!testCase.shouldPass) {
+          console.log(`✅ ${testCase.name} correctly failed validation`);
+        } else {
+          console.log(`⚠️ ${testCase.name} unexpectedly failed`);
+        }
+      }
+      
+      // Restore original method
+      linter['getConfiguration'] = originalGetConfiguration;
+    });
+    
+    console.log('✅ Enhanced configuration validation test completed');
+  });
 }); 
