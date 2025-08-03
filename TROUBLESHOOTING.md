@@ -537,6 +537,12 @@ slim-lint --version
 - [Ruby Installation Guide](https://www.ruby-lang.org/en/documentation/installation/)
 - [Bundler Documentation](https://bundler.io/)
 
+### Related Projects
+
+- **[slim-lint](https://github.com/sds/slim-lint)**: The core linting tool that powers this extension
+- **[Shopify vscode-shopify-ruby](https://github.com/Shopify/vscode-shopify-ruby)**: Comprehensive Ruby development extension pack
+- **[Ruby LSP](https://github.com/Shopify/ruby-lsp)**: Language Server Protocol for Ruby
+
 ---
 
 This troubleshooting guide should help you resolve most issues with the Slim Lint VS Code extension. If you're still experiencing problems, please report them with the information requested above.

@@ -226,3 +226,10 @@ This extension is licensed under the MIT License. See [LICENSE](LICENSE) for det
 - [Slim](https://marketplace.visualstudio.com/items?itemName=sianglim.slim) - Slim syntax highlighting
 - [Ruby](https://marketplace.visualstudio.com/items?itemName=rebornix.Ruby) - Ruby language support
 - [Ruby Solargraph](https://marketplace.visualstudio.com/items?itemName=castwide.solargraph) - Ruby language server
+- [Shopify Ruby](https://marketplace.visualstudio.com/items?itemName=Shopify.ruby-extensions-pack) - Comprehensive Ruby development extension pack by Shopify
+- [Ruby LSP](https://marketplace.visualstudio.com/items?itemName=Shopify.ruby-lsp) - Language Server Protocol for Ruby
+
+## Related Tools
+
+- [slim-lint](https://github.com/sds/slim-lint) - The linting tool that powers this extension
+- [Shopify vscode-shopify-ruby](https://github.com/Shopify/vscode-shopify-ruby) - Opinionated Ruby development extension pack

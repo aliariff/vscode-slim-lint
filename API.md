@@ -497,6 +497,12 @@ Enable debug logging by checking the output channel:
 - **Warning**: Non-critical issues
 - **Error**: Critical failures
 
+## Related Projects
+
+- **[slim-lint](https://github.com/sds/slim-lint)**: The core linting tool that powers this extension
+- **[Shopify vscode-shopify-ruby](https://github.com/Shopify/vscode-shopify-ruby)**: Comprehensive Ruby development extension pack
+- **[Ruby LSP](https://github.com/Shopify/ruby-lsp)**: Language Server Protocol for Ruby
+
 ---
 
 This API documentation provides comprehensive information for developers working with or extending the Slim Lint VS Code extension.

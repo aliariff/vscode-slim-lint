@@ -327,6 +327,12 @@ For feature requests:
 - **GitHub Discussions**: For questions and discussions
 - **Documentation**: Check README.md and inline comments
 
+## Related Projects
+
+- **[slim-lint](https://github.com/sds/slim-lint)**: The core linting tool that powers this extension
+- **[Shopify vscode-shopify-ruby](https://github.com/Shopify/vscode-shopify-ruby)**: Comprehensive Ruby development extension pack
+- **[Ruby LSP](https://github.com/Shopify/ruby-lsp)**: Language Server Protocol for Ruby
+
 ## Recognition
 
 Contributors will be recognized in:
