@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2025-08-03
+
+### Fixed
+
+- **Critical**: Fixed "Cannot find module 'execa'" error by bundling linter.ts with webpack
+- Updated webpack.config.js to bundle both extension.ts and linter.ts files
+- Changed entry point to multiple entry configuration for proper dependency bundling
+- Ensures execa dependency is bundled with both extension and linter files
+- Fixes module not found error in published extensions
+
 ## [0.4.2] - 2025-08-03
 
 ### Fixed
