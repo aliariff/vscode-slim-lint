@@ -31,9 +31,10 @@ interface SlimLintOutput {
   stderr: string;
 }
 
-export default class Linter {
+export default class Linter implements vscode.Disposable {
   private collection: DiagnosticCollection;
   private outputChannel: vscode.OutputChannel;
+  private disposed: boolean = false;
 
   constructor(outputChannel: vscode.OutputChannel) {
     this.collection = languages.createDiagnosticCollection(DIAGNOSTIC_COLLECTION_NAME);
@@ -44,8 +45,19 @@ export default class Linter {
    * Dispose of the linter and clean up resources
    */
   public dispose(): void {
-    this.outputChannel.appendLine('Disposing linter and cleaning up resources');
-    this.collection.dispose();
+    if (this.disposed) {
+      return;
+    }
+    
+    this.disposed = true;
+    
+    if (this.outputChannel) {
+      this.outputChannel.appendLine('Disposing linter and cleaning up resources');
+    }
+    
+    if (this.collection) {
+      this.collection.dispose();
+    }
   }
 
   /**
@@ -53,6 +65,10 @@ export default class Linter {
    * @param document The text document to lint
    */
   public run(document: TextDocument): void {
+    if (this.disposed) {
+      return;
+    }
+    
     if (!this.shouldLintDocument(document)) {
       this.outputChannel.appendLine(`Skipping lint for non-slim file: ${document.fileName}`);
       return;
@@ -67,6 +83,10 @@ export default class Linter {
    * @param document The text document to clear diagnostics for
    */
   public clear(document: TextDocument): void {
+    if (this.disposed) {
+      return;
+    }
+    
     if (this.isFileDocument(document)) {
       this.outputChannel.appendLine(`Clearing diagnostics for: ${document.fileName}`);
       this.collection.delete(document.uri);
@@ -150,19 +170,25 @@ export default class Linter {
     const [command, ...args] = commandArgs;
     const cwd = process.cwd();
 
-    const execaProcess = execa(command, args, {
-      reject: false,
-      cwd,
-    });
+    try {
+      const execaProcess = execa(command, args, {
+        reject: false,
+        cwd,
+      });
 
-    const { stdout, stderr } = await execaProcess;
-    
-    if (stderr) {
-      this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
-      window.showErrorMessage(`slim-lint error: ${stderr}`);
+      const { stdout, stderr } = await execaProcess;
+      
+      if (stderr) {
+        this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
+        window.showErrorMessage(`slim-lint error: ${stderr}`);
+      }
+
+      return { stdout, stderr };
+    } catch (error) {
+      this.outputChannel.appendLine(`Failed to execute slim-lint: ${error}`);
+      window.showErrorMessage(`slim-lint not found. Please install slim-lint: gem install slim_lint`);
+      return { stdout: '', stderr: `slim-lint not found: ${error}` };
     }
-
-    return { stdout, stderr };
   }
 
   /**
@@ -262,7 +288,6 @@ export default class Linter {
       this.updateDiagnostics(document, diagnostics);
 
     } catch (error) {
-      this.outputChannel.appendLine(`Error during linting: ${error}`);
       this.outputChannel.appendLine(`Error during linting: ${error}`);
       window.showErrorMessage(`slim-lint execution failed: ${error}`);
     }

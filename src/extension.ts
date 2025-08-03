@@ -42,6 +42,10 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
+  if (linter) {
+    linter.dispose();
+  }
+  
   if (outputChannel) {
     outputChannel.appendLine('Slim Lint extension deactivated');
     outputChannel.dispose();
