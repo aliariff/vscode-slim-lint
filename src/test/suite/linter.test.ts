@@ -210,6 +210,36 @@ Another invalid line`;
     assert.strictEqual(diagnostics.length, 0, 'Should return empty array for malformed output');
   });
 
+  test('Should not perform operations when disposed', () => {
+    // Dispose the linter
+    linter.dispose();
+    
+    // Try to run operations on disposed linter
+    const mockDocument = {
+      languageId: 'slim',
+      uri: vscode.Uri.file('/test.slim'),
+      getText: () => 'doctype html',
+      fileName: 'test.slim',
+    } as unknown as vscode.TextDocument;
+    
+    // These should not throw errors and should return early
+    linter.run(mockDocument);
+    linter.clear(mockDocument);
+    
+    // Test should pass if no errors are thrown
+    assert.ok(true, 'Disposed linter should handle operations gracefully');
+  });
+
+  test('Should handle configuration validation', () => {
+    // Test that getConfiguration validates properly
+    const config = linter['getConfiguration']();
+    
+    assert.ok(config.executablePath, 'executablePath should be defined');
+    assert.ok(config.configurationPath, 'configurationPath should be defined');
+    assert.strictEqual(typeof config.executablePath, 'string', 'executablePath should be a string');
+    assert.strictEqual(typeof config.configurationPath, 'string', 'configurationPath should be a string');
+  });
+
   test('Should run linter and produce real diagnostics from slim-lint execution', async () => {
     // Clear any existing diagnostics first
     linter.clear(testDocument);

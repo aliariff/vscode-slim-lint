@@ -11,34 +11,44 @@ export function activate(context: vscode.ExtensionContext) {
   outputChannel = vscode.window.createOutputChannel('Slim Lint');
   outputChannel.appendLine('Slim Lint extension activated');
 
-  linter = new Linter(outputChannel);
+  try {
+    linter = new Linter(outputChannel);
 
-  // Add linter to subscriptions for proper cleanup
-  context.subscriptions.push(linter);
+    // Add linter to subscriptions for proper cleanup
+    context.subscriptions.push(linter);
 
-  const updateDiagnostics = (document: vscode.TextDocument) => {
-    linter.run(document);
-  };
+    const updateDiagnostics = (document: vscode.TextDocument) => {
+      if (linter) {
+        linter.run(document);
+      }
+    };
 
-  // Listen for document save events
-  context.subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument(updateDiagnostics)
-  );
+    // Listen for document save events
+    context.subscriptions.push(
+      vscode.workspace.onDidSaveTextDocument(updateDiagnostics)
+    );
 
-  // Listen for document open events
-  context.subscriptions.push(
-    vscode.workspace.onDidOpenTextDocument(updateDiagnostics)
-  );
+    // Listen for document open events
+    context.subscriptions.push(
+      vscode.workspace.onDidOpenTextDocument(updateDiagnostics)
+    );
 
-  // Listen for document close events
-  context.subscriptions.push(
-    vscode.workspace.onDidCloseTextDocument(document => {
-      linter.clear(document);
-    })
-  );
+    // Listen for document close events
+    context.subscriptions.push(
+      vscode.workspace.onDidCloseTextDocument(document => {
+        if (linter) {
+          linter.clear(document);
+        }
+      })
+    );
 
-  // Lint all open documents
-  vscode.workspace.textDocuments.forEach(updateDiagnostics);
+    // Lint all open documents
+    vscode.workspace.textDocuments.forEach(updateDiagnostics);
+    
+  } catch (error) {
+    outputChannel.appendLine(`Failed to initialize linter: ${error}`);
+    vscode.window.showErrorMessage(`Slim Lint extension failed to initialize: ${error}`);
+  }
 }
 
 export function deactivate() {

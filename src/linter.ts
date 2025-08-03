@@ -117,9 +117,21 @@ export default class Linter implements vscode.Disposable {
    */
   private getConfiguration(): SlimLintConfig {
     const config = workspace.getConfiguration('slimLint');
+    const executablePath = config.get('executablePath') as string;
+    const configurationPath = config.get('configurationPath') as string;
+    
+    // Validate configuration
+    if (!executablePath || executablePath.trim() === '') {
+      throw new Error('slim-lint executable path is not configured');
+    }
+    
+    if (!configurationPath || configurationPath.trim() === '') {
+      throw new Error('slim-lint configuration path is not configured');
+    }
+    
     return {
-      executablePath: config.get('executablePath') as string,
-      configurationPath: config.get('configurationPath') as string,
+      executablePath,
+      configurationPath,
     };
   }
 
@@ -250,6 +262,10 @@ export default class Linter implements vscode.Disposable {
    * @param diagnostics The diagnostics to set
    */
   private updateDiagnostics(document: TextDocument, diagnostics: Diagnostic[]): void {
+    if (this.disposed) {
+      return;
+    }
+    
     this.collection.delete(document.uri);
     this.collection.set(document.uri, diagnostics);
   }
@@ -259,6 +275,10 @@ export default class Linter implements vscode.Disposable {
    * @param document The text document to lint
    */
   private async lint(document: TextDocument): Promise<void> {
+    if (this.disposed) {
+      return;
+    }
+
     const originalText = document.getText();
 
     try {
@@ -270,6 +290,11 @@ export default class Linter implements vscode.Disposable {
 
       // Execute slim-lint
       const { stdout, stderr } = await this.executeSlimLint(commandArgs);
+
+      // Check disposal state again after async operation
+      if (this.disposed) {
+        return;
+      }
 
       this.outputChannel.appendLine(`slim-lint stdout: ${stdout}`);
       if (stderr) {
