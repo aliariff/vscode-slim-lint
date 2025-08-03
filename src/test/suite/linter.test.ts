@@ -17,68 +17,8 @@ suite('Linter Test Suite', () => {
     // Create a fresh linter instance
     linter = new Linter(outputChannel);
 
-    // Create a test Slim file with known issues
-    const testContent = `doctype html
-html
-  head
-    title Complex Test File with Various Issues
-    meta name="viewport" content="width=device-width, initial-scale=1.0"
-    link rel="stylesheet" href="styles.css"
-    script src="script.js"
-  body
-    header
-      nav
-        ul
-          li
-            a href="/" Home
-          li
-            a href="/about" About
-          li
-            a href="/contact" Contact
-    main
-      section
-        h1 Welcome to Our Site
-        p This is a very long paragraph that should trigger the line length rule because it exceeds the maximum allowed line length of 80 characters and contains a lot of unnecessary text just to make it longer.
-        p Another paragraph with trailing whitespace    
-        p
-          | This is a multi-line text block
-          | that spans multiple lines
-          | and should be properly formatted
-      section
-        div class="container"
-          div class="row"
-            div class="col-md-6"
-              h2 Section One
-              p Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-            div class="col-md-6"
-              h2 Section Two
-              p Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-        div
-          p
-            | This is another multi-line text block
-            | with proper indentation
-            | and should not trigger any issues
-      section
-        form action="/submit" method="post"
-          div class="form-group"
-            label for="name" Name:
-            input type="text" id="name" name="name" required="true"
-          div class="form-group"
-            label for="email" Email:
-            input type="email" id="email" name="email" required="true"
-          div class="form-group"
-            label for="message" Message:
-            textarea id="message" name="message" rows="5"
-          button type="submit" class="btn btn-primary" Submit
-    footer
-      p &copy; 2024 Our Company. All rights reserved.
-      p
-        | This footer has a very long line that should trigger the line length rule because it contains too much text and exceeds the maximum allowed line length of 80 characters which is quite restrictive for modern web development.
-`;
-
-    const testFile = path.join(__dirname, '../../../test-file.slim');
-    fs.writeFileSync(testFile, testContent);
-
+    // Use fixture file instead of creating dynamically
+    const testFile = path.join(process.cwd(), 'src/test/fixtures/complex-test.slim');
     testDocument = await vscode.workspace.openTextDocument(testFile);
   });
 
@@ -90,12 +30,6 @@ html
     if (outputChannel) {
       outputChannel.dispose();
     }
-
-    // Clean up test file
-    const testFile = path.join(__dirname, '../../../test-file.slim');
-    if (fs.existsSync(testFile)) {
-      fs.unlinkSync(testFile);
-    }
   });
 
   test('Should create diagnostic collection', () => {
@@ -106,11 +40,8 @@ html
   });
 
   test('Should not run on non-slim files', async () => {
-    // Create a JavaScript file
-    const jsContent = 'console.log("test");';
-    const jsFile = path.join(__dirname, '../../../test-file.js');
-    fs.writeFileSync(jsFile, jsContent);
-    
+    // Use fixture file for non-slim test
+    const jsFile = path.join(process.cwd(), 'src/test/fixtures/test-file.js');
     const jsDocument = await vscode.workspace.openTextDocument(jsFile);
     
     // Run the real linter
@@ -123,11 +54,6 @@ html
     const allDiagnostics = vscode.languages.getDiagnostics();
     const jsDiagnostics = allDiagnostics.filter(([uri]) => uri.fsPath.includes('test-file.js'));
     assert.strictEqual(jsDiagnostics.length, 0, 'Should not create diagnostics for non-slim files');
-    
-    // Clean up
-    if (fs.existsSync(jsFile)) {
-      fs.unlinkSync(jsFile);
-    }
   });
 
   test('Should clear diagnostics for file documents', () => {
@@ -287,6 +213,26 @@ Another invalid line`;
     assert.strictEqual(typeof config.configurationPath, 'string', 'configurationPath should be a string');
   });
 
+  test('Should handle valid slim files without issues', async () => {
+    // Use fixture file for valid test
+    const validTestFile = path.join(process.cwd(), 'src/test/fixtures/valid-test.slim');
+    const validTestDocument = await vscode.workspace.openTextDocument(validTestFile);
+    
+    // Run the linter on the valid test file
+    linter.run(validTestDocument);
+    
+    // Wait for processing
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Check diagnostics
+    const diagnostics = linter['collection'].get(validTestDocument.uri) || [];
+    
+    console.log(`Valid test file produced ${diagnostics.length} diagnostics`);
+    
+    // Should have no diagnostics for a valid file
+    assert.strictEqual(diagnostics.length, 0, 'Valid file should have no diagnostics');
+  });
+
   test('Should run linter and produce real diagnostics from slim-lint execution', async () => {
     // Clear any existing diagnostics first
     linter.clear(testDocument);
@@ -337,21 +283,8 @@ Another invalid line`;
   });
 
   test('Should handle various slim-lint rule types', async () => {
-    // Create a test file with tabs to test Tab rule
-    const tabTestContent = `doctype html
-html
-	head
-		title Tab Test File
-	body
-		div
-			p This line has tabs and should trigger Tab rule
-			p This line is very long and should trigger LineLength rule because it exceeds the maximum allowed line length of 80 characters
-			p This line has trailing whitespace    
-`;
-    
-    const tabTestFile = path.join(__dirname, '../../../tab-test-file.slim');
-    fs.writeFileSync(tabTestFile, tabTestContent);
-    
+    // Use fixture file for tab test
+    const tabTestFile = path.join(process.cwd(), 'src/test/fixtures/tab-test.slim');
     const tabTestDocument = await vscode.workspace.openTextDocument(tabTestFile);
     
     // Run the linter on the tab test file
@@ -379,10 +312,5 @@ html
       lineLength: hasLineLengthRule,
       trailingWhitespace: hasTrailingWhitespaceRule
     });
-    
-    // Clean up
-    if (fs.existsSync(tabTestFile)) {
-      fs.unlinkSync(tabTestFile);
-    }
   });
 }); 
