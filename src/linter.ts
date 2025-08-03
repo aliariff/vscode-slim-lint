@@ -1,5 +1,7 @@
 import { execa } from 'execa';
 import * as fs from 'fs';
+import * as path from 'path';
+import * as vscode from 'vscode';
 import {
   Diagnostic,
   DiagnosticCollection,
@@ -12,118 +14,578 @@ import {
   window,
 } from 'vscode';
 
-const REGEX = /.+?:(\d+) \[(W|E)] (\w+): (.+)/g;
+// Constants
+const SLIM_LANGUAGE_ID = 'slim';
+const DIAGNOSTIC_COLLECTION_NAME = 'slim-lint';
+const DEFAULT_CONFIG_FILE = '.slim-lint.yml';
+const SLIM_LINT_OUTPUT_REGEX = /.+?:(\d+) \[(W|E)] (\w+): (.+)/g;
+const LINT_TIMEOUT = 30000; // 30 seconds
 
-export default class Linter {
-  private collection: DiagnosticCollection =
-    languages.createDiagnosticCollection('slim-lint');
-  private processes: WeakMap<TextDocument, any> = new WeakMap();
+// Types
+interface SlimLintConfig {
+  executablePath: string;
+  configurationPath: string;
+}
 
-  /**
-   * dispose
-   */
-  public dispose() {
-    this.collection.dispose();
+interface SlimLintOutput {
+  stdout: string;
+  stderr: string;
+}
+
+export default class Linter implements vscode.Disposable {
+  private collection: DiagnosticCollection;
+  private outputChannel: vscode.OutputChannel;
+  private disposed: boolean = false;
+
+  constructor(outputChannel: vscode.OutputChannel) {
+    this.collection = languages.createDiagnosticCollection(
+      DIAGNOSTIC_COLLECTION_NAME
+    );
+    this.outputChannel = outputChannel;
   }
 
   /**
-   * run
+   * Dispose of the linter and clean up resources
    */
-  public run(document: TextDocument) {
-    if (document.languageId !== 'slim') {
+  public dispose(): void {
+    if (this.disposed) {
       return;
     }
 
+    this.disposed = true;
+
+    if (this.outputChannel) {
+      this.outputChannel.appendLine(
+        'Disposing linter and cleaning up resources'
+      );
+    }
+
+    if (this.collection) {
+      this.collection.dispose();
+    }
+  }
+
+  /**
+   * Run the linter on a document
+   * @param document The text document to lint
+   */
+  public run(document: TextDocument): void {
+    if (this.disposed) {
+      return;
+    }
+
+    if (!this.shouldLintDocument(document)) {
+      this.outputChannel.appendLine(
+        `Skipping lint for non-slim file: ${document.fileName}`
+      );
+      return;
+    }
+
+    this.outputChannel.appendLine(`Running linter on: ${document.fileName}`);
     this.lint(document);
   }
 
   /**
-   * clear
+   * Clear diagnostics for a document
+   * @param document The text document to clear diagnostics for
    */
-  public clear(document: TextDocument) {
-    if (document.uri.scheme === 'file') {
+  public clear(document: TextDocument): void {
+    if (this.disposed) {
+      return;
+    }
+
+    if (this.isFileDocument(document)) {
+      this.outputChannel.appendLine(
+        `Clearing diagnostics for: ${document.fileName}`
+      );
       this.collection.delete(document.uri);
     }
   }
 
-  private async lint(document: TextDocument) {
-    const text = document.getText();
-    const oldProcess = this.processes.get(document);
-    if (oldProcess) {
-      oldProcess.kill();
+  /**
+   * Check if the document should be linted
+   * @param document The text document to check
+   * @returns True if the document should be linted
+   */
+  private shouldLintDocument(document: TextDocument): boolean {
+    return document.languageId === SLIM_LANGUAGE_ID;
+  }
+
+  /**
+   * Check if the document is a file document
+   * @param document The text document to check
+   * @returns True if the document is a file document
+   */
+  private isFileDocument(document: TextDocument): boolean {
+    return document.uri.scheme === 'file';
+  }
+
+  /**
+   * Get the slim-lint configuration from workspace settings
+   * @returns The slim-lint configuration
+   */
+  private getConfiguration(): SlimLintConfig {
+    const config = workspace.getConfiguration('slimLint');
+    const executablePath = config.get('executablePath') as string;
+    const configurationPath = config.get('configurationPath') as string;
+
+    // Enhanced configuration validation
+    if (!executablePath || executablePath.trim() === '') {
+      const errorMessage =
+        'slim-lint executable path is not configured. Please set slimLint.executablePath in your settings.';
+      this.outputChannel.appendLine(errorMessage);
+      throw new Error(errorMessage);
     }
 
-    const executablePath =
-      workspace.getConfiguration('slimLint').executablePath;
-    let configurationPath =
-      workspace.getConfiguration('slimLint').configurationPath;
-    const [command, ...args] = executablePath.split(/\s+/);
-
-    if (configurationPath === '.slim-lint.yml' && workspace.workspaceFolders) {
-      configurationPath =
-        workspace.workspaceFolders[0].uri.fsPath + '/' + configurationPath;
+    if (!configurationPath || configurationPath.trim() === '') {
+      const errorMessage =
+        'slim-lint configuration path is not configured. Please set slimLint.configurationPath in your settings.';
+      this.outputChannel.appendLine(errorMessage);
+      throw new Error(errorMessage);
     }
-    if (fs.existsSync(configurationPath)) {
-      args.push('--config', configurationPath);
-    } else {
-      console.warn(
-        `${configurationPath} path does not exist! slim-lint extension using default settings`
+
+    // Validate executable path format
+    if (
+      executablePath.includes(' ') &&
+      !executablePath.startsWith('"') &&
+      !executablePath.endsWith('"')
+    ) {
+      this.outputChannel.appendLine(
+        `Warning: Executable path contains spaces: "${executablePath}". Consider wrapping in quotes if needed.`
       );
     }
 
-    let cwd = workspace.workspaceFolders
-      ? workspace.workspaceFolders[0].uri.fsPath
-      : '/';
-
-    const process = execa(command, [...args, document.uri.fsPath], {
-      reject: false,
-      cwd,
-    });
-
-    this.processes.set(document, process);
-    const { stdout, stderr } = await process;
-    if (stderr) {
-      console.error(stderr);
-      window.showErrorMessage(stderr);
+    // Validate executable path structure
+    const [command] = executablePath.split(/\s+/);
+    if (!command || command.trim() === '') {
+      const errorMessage =
+        'slim-lint executable path is malformed. Please check your slimLint.executablePath setting.';
+      this.outputChannel.appendLine(errorMessage);
+      throw new Error(errorMessage);
     }
-    this.processes.delete(document);
 
-    if (text !== document.getText()) {
+    // Check for common executable names
+    const validExecutables = ['slim-lint', 'slim_lint', 'bundle', 'gem'];
+    const isKnownExecutable = validExecutables.some(valid =>
+      command.includes(valid)
+    );
+    if (!isKnownExecutable) {
+      this.outputChannel.appendLine(
+        `Warning: Executable '${command}' is not a known slim-lint executable. Expected: slim-lint, slim_lint, bundle exec slim-lint, or gem exec slim-lint`
+      );
+    }
+
+    return {
+      executablePath,
+      configurationPath,
+    };
+  }
+
+  /**
+   * Resolve the configuration file path
+   * @param configPath The configuration path from settings
+   * @returns The resolved configuration file path
+   */
+  private resolveConfigurationPath(configPath: string): string {
+    if (configPath === DEFAULT_CONFIG_FILE) {
+      return path.join(process.cwd(), configPath);
+    }
+    return configPath;
+  }
+
+  /**
+   * Build the slim-lint command arguments
+   * @param config The slim-lint configuration
+   * @param documentPath The path to the document to lint
+   * @returns The command arguments
+   */
+  private buildCommandArgs(
+    config: SlimLintConfig,
+    documentPath: string
+  ): string[] {
+    const [command, ...baseArgs] = config.executablePath.split(/\s+/);
+    const args = [command, ...baseArgs];
+
+    const resolvedConfigPath = this.resolveConfigurationPath(
+      config.configurationPath
+    );
+
+    // Enhanced configuration file validation
+    if (fs.existsSync(resolvedConfigPath)) {
+      try {
+        // Check if file is readable
+        fs.accessSync(resolvedConfigPath, fs.constants.R_OK);
+
+        // Validate file size (prevent reading extremely large files)
+        const stats = fs.statSync(resolvedConfigPath);
+        const maxSize = 1024 * 1024; // 1MB
+        if (stats.size > maxSize) {
+          const warningMessage = `Configuration file ${resolvedConfigPath} is very large (${Math.round(stats.size / 1024)}KB). This may cause performance issues.`;
+          this.outputChannel.appendLine(warningMessage);
+        }
+
+        // Validate file extension
+        const validExtensions = ['.yml', '.yaml'];
+        const fileExt = path.extname(resolvedConfigPath).toLowerCase();
+        if (!validExtensions.includes(fileExt)) {
+          const warningMessage = `Configuration file ${resolvedConfigPath} has unexpected extension '${fileExt}'. Expected: .yml or .yaml`;
+          this.outputChannel.appendLine(warningMessage);
+        }
+
+        args.push('--config', resolvedConfigPath);
+        this.outputChannel.appendLine(
+          `Using configuration file: ${resolvedConfigPath}`
+        );
+      } catch (accessError) {
+        const errorMessage = `Configuration file ${resolvedConfigPath} exists but is not readable. Check file permissions.`;
+        this.outputChannel.appendLine(errorMessage);
+        window.showErrorMessage(errorMessage);
+      }
+    } else {
+      const warningMessage = `Configuration file ${resolvedConfigPath} does not exist! Using default slim-lint settings.`;
+      this.outputChannel.appendLine(warningMessage);
+
+      // Provide helpful guidance
+      const guidanceMessage =
+        'To use a custom configuration, create a .slim-lint.yml file in your project root or set slimLint.configurationPath in your settings.';
+      this.outputChannel.appendLine(guidanceMessage);
+
+      // Check if there are any .slim-lint.yml files in the project
+      const projectRoot = process.cwd();
+      const possibleConfigs = [
+        '.slim-lint.yml',
+        '.slim-lint.yaml',
+        'slim-lint.yml',
+        'slim-lint.yaml',
+      ];
+      const foundConfigs = possibleConfigs.filter(config =>
+        fs.existsSync(path.join(projectRoot, config))
+      );
+
+      if (foundConfigs.length > 0) {
+        const suggestionMessage = `Found potential configuration files: ${foundConfigs.join(', ')}. Consider updating slimLint.configurationPath setting.`;
+        this.outputChannel.appendLine(suggestionMessage);
+      }
+    }
+
+    args.push(documentPath);
+    return args;
+  }
+
+  /**
+   * Execute slim-lint command
+   * @param commandArgs The command arguments
+   * @returns The slim-lint output
+   */
+  private async executeSlimLint(
+    commandArgs: string[]
+  ): Promise<SlimLintOutput> {
+    const [command, ...args] = commandArgs;
+    const cwd = process.cwd();
+
+    try {
+      // Validate command exists and is not empty
+      if (!command || command.trim() === '') {
+        throw new Error('slim-lint command is empty or invalid');
+      }
+
+      // Enhanced executable validation
+      let executableExists = false;
+      let executablePath = '';
+
+      try {
+        // Check if command exists in PATH
+        const { stdout } = await execa('which', [command], { reject: false });
+        if (stdout && stdout.trim()) {
+          executableExists = true;
+          executablePath = stdout.trim();
+          this.outputChannel.appendLine(`Found executable: ${executablePath}`);
+        }
+      } catch (whichError) {
+        this.outputChannel.appendLine(`Command '${command}' not found in PATH`);
+      }
+
+      // Additional validation for common slim-lint scenarios
+      if (!executableExists) {
+        // Check if it's a bundle exec command
+        if (command === 'bundle') {
+          try {
+            const { stdout } = await execa(
+              'bundle',
+              ['exec', 'slim-lint', '--version'],
+              { reject: false }
+            );
+            if (stdout) {
+              executableExists = true;
+              this.outputChannel.appendLine('Found slim-lint via bundle exec');
+            }
+          } catch (bundleError) {
+            this.outputChannel.appendLine(
+              'bundle exec slim-lint not available'
+            );
+          }
+        }
+
+        // Check if it's a gem exec command
+        if (command === 'gem') {
+          try {
+            const { stdout } = await execa(
+              'gem',
+              ['exec', 'slim-lint', '--version'],
+              { reject: false }
+            );
+            if (stdout) {
+              executableExists = true;
+              this.outputChannel.appendLine('Found slim-lint via gem exec');
+            }
+          } catch (gemError) {
+            this.outputChannel.appendLine('gem exec slim-lint not available');
+          }
+        }
+      }
+
+      if (!executableExists) {
+        this.outputChannel.appendLine(
+          `Warning: Could not verify executable '${command}'. slim-lint may not be installed or not in PATH.`
+        );
+      }
+
+      const execaProcess = execa(command, args, {
+        reject: false,
+        cwd,
+        timeout: LINT_TIMEOUT,
+      });
+
+      const { stdout, stderr } = await execaProcess;
+
+      if (stderr) {
+        this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
+
+        // Provide specific error messages based on stderr content
+        if (
+          stderr.includes('command not found') ||
+          stderr.includes('not found')
+        ) {
+          const installMessage =
+            'slim-lint not found. Please install slim-lint: gem install slim_lint';
+          window.showErrorMessage(installMessage);
+          this.outputChannel.appendLine(installMessage);
+        } else if (stderr.includes('permission denied')) {
+          const permissionMessage =
+            'slim-lint permission denied. Please check file permissions.';
+          window.showErrorMessage(permissionMessage);
+          this.outputChannel.appendLine(permissionMessage);
+        } else if (stderr.includes('timeout')) {
+          const timeoutMessage =
+            'slim-lint execution timed out. Please check your configuration.';
+          window.showErrorMessage(timeoutMessage);
+          this.outputChannel.appendLine(timeoutMessage);
+        } else if (stderr.includes('error') || stderr.includes('failed')) {
+          window.showErrorMessage(`slim-lint error: ${stderr}`);
+        }
+      }
+
+      return { stdout, stderr };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(
+        `Failed to execute slim-lint: ${errorMessage}`
+      );
+
+      // Provide helpful installation instructions based on error type
+      let installMessage =
+        'slim-lint not found. Please install slim-lint: gem install slim_lint';
+
+      if (errorMessage.includes('timeout')) {
+        installMessage =
+          'slim-lint execution timed out. Please check your configuration or increase timeout.';
+      } else if (errorMessage.includes('permission')) {
+        installMessage =
+          'slim-lint permission denied. Please check file permissions and try again.';
+      } else if (errorMessage.includes('ENOENT')) {
+        installMessage =
+          'slim-lint executable not found. Please install slim-lint: gem install slim_lint';
+      }
+
+      window.showErrorMessage(installMessage);
+      this.outputChannel.appendLine(installMessage);
+
+      return {
+        stdout: '',
+        stderr: `slim-lint execution failed: ${errorMessage}`,
+      };
+    }
+  }
+
+  /**
+   * Parse slim-lint output and create diagnostics
+   * @param output The slim-lint output
+   * @param document The text document
+   * @returns Array of diagnostics
+   */
+  private parseOutput(output: string, document: TextDocument): Diagnostic[] {
+    const diagnostics: Diagnostic[] = [];
+    let match = SLIM_LINT_OUTPUT_REGEX.exec(output);
+
+    while (match !== null) {
+      const diagnostic = this.createDiagnostic(match, document);
+      if (diagnostic) {
+        diagnostics.push(diagnostic);
+      }
+      match = SLIM_LINT_OUTPUT_REGEX.exec(output);
+    }
+
+    return diagnostics;
+  }
+
+  /**
+   * Create a diagnostic from a regex match
+   * @param match The regex match from slim-lint output
+   * @param document The text document
+   * @returns The diagnostic or null if invalid
+   */
+  private createDiagnostic(
+    match: RegExpExecArray,
+    document: TextDocument
+  ): Diagnostic | null {
+    try {
+      const [, lineStr, severityChar, ruleName, message] = match;
+      const line = Math.max(parseInt(lineStr, 10) - 1, 0);
+
+      if (line >= document.lineCount) {
+        return null;
+      }
+
+      const severity =
+        severityChar === 'W'
+          ? DiagnosticSeverity.Warning
+          : DiagnosticSeverity.Error;
+
+      const lineText = document.lineAt(line);
+      const range = new Range(
+        new Position(line, lineText.firstNonWhitespaceCharacterIndex),
+        lineText.range.end
+      );
+
+      return new Diagnostic(range, `${ruleName}: ${message}`, severity);
+    } catch (error) {
+      this.outputChannel.appendLine(`Error creating diagnostic: ${error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Update diagnostics for a document
+   * @param document The text document
+   * @param diagnostics The diagnostics to set
+   */
+  private updateDiagnostics(
+    document: TextDocument,
+    diagnostics: Diagnostic[]
+  ): void {
+    if (this.disposed) {
       return;
     }
 
     this.collection.delete(document.uri);
-    this.collection.set(document.uri, this.parse(stdout, document));
+    this.collection.set(document.uri, diagnostics);
   }
 
-  private parse(output: string, document: TextDocument): Diagnostic[] {
-    const diagnostics = [];
-
-    let match = REGEX.exec(output);
-    while (match !== null) {
-      const severity =
-        match[2] === 'W'
-          ? DiagnosticSeverity.Warning
-          : DiagnosticSeverity.Error;
-      const line = Math.max(Number.parseInt(match[1], 10) - 1, 0);
-      const ruleName = match[3];
-      const message = match[4];
-      const lineText = document.lineAt(line);
-      const lineTextRange = lineText.range;
-      const range = new Range(
-        new Position(
-          lineTextRange.start.line,
-          lineText.firstNonWhitespaceCharacterIndex
-        ),
-        lineTextRange.end
-      );
-
-      diagnostics.push(
-        new Diagnostic(range, `${ruleName}: ${message}`, severity)
-      );
-      match = REGEX.exec(output);
+  /**
+   * Main linting method
+   * @param document The text document to lint
+   */
+  private async lint(document: TextDocument): Promise<void> {
+    if (this.disposed) {
+      return;
     }
 
-    return diagnostics;
+    const startTime = Date.now();
+    const originalText = document.getText();
+    const fileSize = originalText.length;
+
+    try {
+      // Get configuration and build command
+      const config = this.getConfiguration();
+      const commandArgs = this.buildCommandArgs(config, document.uri.fsPath);
+
+      this.outputChannel.appendLine(
+        `Executing slim-lint: ${commandArgs.join(' ')}`
+      );
+
+      // Execute slim-lint
+      const { stdout, stderr } = await this.executeSlimLint(commandArgs);
+
+      // Check disposal state again after async operation
+      if (this.disposed) {
+        return;
+      }
+
+      this.outputChannel.appendLine(`slim-lint stdout: ${stdout}`);
+      if (stderr) {
+        this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
+      }
+
+      // Check if document content changed during linting
+      if (originalText !== document.getText()) {
+        this.outputChannel.appendLine(
+          'Document content changed during linting, skipping update'
+        );
+        const duration = Date.now() - startTime;
+        this.outputChannel.appendLine(
+          `⏱️ Linting skipped after ${duration}ms (content changed)`
+        );
+        return;
+      }
+
+      // Parse output and update diagnostics
+      const diagnostics = this.parseOutput(stdout, document);
+      this.outputChannel.appendLine(`Parsed ${diagnostics.length} diagnostics`);
+      this.updateDiagnostics(document, diagnostics);
+
+      // Log performance timing
+      const duration = Date.now() - startTime;
+      this.outputChannel.appendLine(
+        `⏱️ Linting completed in ${duration}ms (${diagnostics.length} diagnostics, ${fileSize} bytes)`
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`Error during linting: ${errorMessage}`);
+
+      // Log performance timing even for errors
+      const duration = Date.now() - startTime;
+      this.outputChannel.appendLine(
+        `⏱️ Linting failed after ${duration}ms (${fileSize} bytes)`
+      );
+
+      if (!this.disposed) {
+        // Provide specific error messages based on error type
+        let userMessage = `slim-lint execution failed: ${errorMessage}`;
+
+        if (errorMessage.includes('executable path is not configured')) {
+          userMessage =
+            'slim-lint executable path is not configured. Please check your settings.';
+        } else if (
+          errorMessage.includes('configuration path is not configured')
+        ) {
+          userMessage =
+            'slim-lint configuration path is not configured. Please check your settings.';
+        } else if (errorMessage.includes('timeout')) {
+          userMessage =
+            'slim-lint execution timed out. Please check your configuration or increase timeout.';
+        } else if (errorMessage.includes('permission')) {
+          userMessage =
+            'slim-lint permission denied. Please check file permissions.';
+        } else if (errorMessage.includes('ENOENT')) {
+          userMessage =
+            'slim-lint executable not found. Please install slim-lint: gem install slim_lint';
+        }
+
+        window.showErrorMessage(userMessage);
+        this.outputChannel.appendLine(`User message: ${userMessage}`);
+      }
+    }
   }
 }

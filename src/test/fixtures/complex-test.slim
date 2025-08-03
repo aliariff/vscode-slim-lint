@@ -1,0 +1,56 @@
+doctype html
+html
+  head
+    title Complex Test File with Various Issues
+    meta name="viewport" content="width=device-width, initial-scale=1.0"
+    link rel="stylesheet" href="styles.css"
+    script src="script.js"
+  body
+    header
+      nav
+        ul
+          li
+            a href="/" Home
+          li
+            a href="/about" About
+          li
+            a href="/contact" Contact
+    main
+      section
+        h1 Welcome to Our Site
+        p This is a very long paragraph that should trigger the line length rule because it exceeds the maximum allowed line length of 80 characters and contains a lot of unnecessary text just to make it longer.
+        p Another paragraph with trailing whitespace    
+        p
+          | This is a multi-line text block
+          | that spans multiple lines
+          | and should be properly formatted
+      section
+        div class="container"
+          div class="row"
+            div class="col-md-6"
+              h2 Section One
+              p Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+            div class="col-md-6"
+              h2 Section Two
+              p Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+        div
+          p
+            | This is another multi-line text block
+            | with proper indentation
+            | and should not trigger any issues
+      section
+        form action="/submit" method="post"
+          div class="form-group"
+            label for="name" Name:
+            input type="text" id="name" name="name" required="true"
+          div class="form-group"
+            label for="email" Email:
+            input type="email" id="email" name="email" required="true"
+          div class="form-group"
+            label for="message" Message:
+            textarea id="message" name="message" rows="5"
+          button type="submit" class="btn btn-primary" Submit
+    footer
+      p &copy; 2024 Our Company. All rights reserved.
+      p
+        | This footer has a very long line that should trigger the line length rule because it contains too much text and exceeds the maximum allowed line length of 80 characters which is quite restrictive for modern web development. 

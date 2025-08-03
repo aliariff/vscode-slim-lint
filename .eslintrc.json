@@ -24,6 +24,14 @@
         "prefer-const": "error",
         "no-var": "error"
     },
+    "overrides": [
+        {
+            "files": ["**/test/**/*.ts", "**/*.test.ts"],
+            "rules": {
+                "no-console": "off"
+            }
+        }
+    ],
     "globals": {
         "suite": "readonly",
         "test": "readonly"
