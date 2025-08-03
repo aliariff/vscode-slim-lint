@@ -38,12 +38,33 @@ export default class Linter implements vscode.Disposable {
   private collection: DiagnosticCollection;
   private outputChannel: vscode.OutputChannel;
   private disposed: boolean = false;
+  private isTestMode: boolean = process.env.NODE_ENV === 'test';
 
   constructor(outputChannel: vscode.OutputChannel) {
     this.collection = languages.createDiagnosticCollection(
       DIAGNOSTIC_COLLECTION_NAME
     );
     this.outputChannel = outputChannel;
+  }
+
+  /**
+   * Optimized logging method
+   * @param message The message to log
+   * @param level The log level (info, warn, error)
+   * @param showInTest Whether to show in test mode (default: false)
+   */
+  private log(message: string, level: 'info' | 'warn' | 'error' = 'info', showInTest: boolean = false): void {
+    if (this.disposed) return;
+    
+    const prefix = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : 'ℹ️';
+    const logMessage = `${prefix} ${message}`;
+    
+    this.outputChannel.appendLine(logMessage);
+    
+    // Only log to console in test mode if explicitly requested
+    if (this.isTestMode && showInTest) {
+      console.log(logMessage);
+    }
   }
 
   /**
@@ -80,7 +101,7 @@ export default class Linter implements vscode.Disposable {
       return;
     }
 
-    this.outputChannel.appendLine(`Running linter on: ${document.fileName}`);
+    this.log(`Running on: ${document.fileName}`, 'info');
     this.lint(document);
   }
 
@@ -94,9 +115,7 @@ export default class Linter implements vscode.Disposable {
     }
 
     if (this.isFileDocument(document)) {
-      this.outputChannel.appendLine(
-        `Clearing diagnostics for: ${document.fileName}`
-      );
+      this.log(`Clearing: ${document.fileName}`, 'info');
       this.collection.delete(document.uri);
     }
   }
@@ -351,9 +370,7 @@ export default class Linter implements vscode.Disposable {
       }
 
       if (!executableExists) {
-        this.outputChannel.appendLine(
-          `Warning: Could not verify executable '${command}'. slim-lint may not be installed or not in PATH.`
-        );
+        this.log(`Could not verify executable '${command}'`, 'warn');
       }
 
       const result = await execa(command, args, {
@@ -364,16 +381,13 @@ export default class Linter implements vscode.Disposable {
 
       const { stdout, stderr, failed, code } = result;
 
-      // Check if command failed
-      if (failed) {
-        this.outputChannel.appendLine(`slim-lint failed with code: ${code}`);
-        if (process.env.NODE_ENV === 'test') {
-          console.log(`slim-lint failed with code: ${code}`);
-        }
+      // Check if command failed (only log if it's a real failure)
+      if (failed && !stdout) {
+        this.log(`Failed with code: ${code}`, 'error', true);
       }
 
       if (stderr) {
-        this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
+        this.log(`stderr: ${stderr}`, 'error', true);
 
         // Provide specific error messages based on stderr content
         if (
@@ -388,17 +402,14 @@ export default class Linter implements vscode.Disposable {
               ? 'slim-lint not found. Please install slim-lint: gem install slim_lint. On Windows, ensure Ruby and slim-lint are in your PATH.'
               : 'slim-lint not found. Please install slim-lint: gem install slim_lint';
           window.showErrorMessage(installMessage);
-          this.outputChannel.appendLine(installMessage);
         } else if (stderr.includes('permission denied')) {
           const permissionMessage =
             'slim-lint permission denied. Please check file permissions.';
           window.showErrorMessage(permissionMessage);
-          this.outputChannel.appendLine(permissionMessage);
         } else if (stderr.includes('timeout')) {
           const timeoutMessage =
             'slim-lint execution timed out. Please check your configuration.';
           window.showErrorMessage(timeoutMessage);
-          this.outputChannel.appendLine(timeoutMessage);
         } else if (stderr.includes('error') || stderr.includes('failed')) {
           window.showErrorMessage(`slim-lint error: ${stderr}`);
         }
@@ -408,9 +419,7 @@ export default class Linter implements vscode.Disposable {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      this.outputChannel.appendLine(
-        `Failed to execute slim-lint: ${errorMessage}`
-      );
+      this.log(`Execution failed: ${errorMessage}`, 'error', true);
 
       // Provide helpful installation instructions based on error type
       let installMessage =
@@ -432,7 +441,6 @@ export default class Linter implements vscode.Disposable {
       }
 
       window.showErrorMessage(installMessage);
-      this.outputChannel.appendLine(installMessage);
 
       return {
         stdout: '',
@@ -528,19 +536,13 @@ export default class Linter implements vscode.Disposable {
 
     const startTime = Date.now();
     const originalText = document.getText();
-    const fileSize = originalText.length;
 
     try {
       // Get configuration and build command
       const config = this.getConfiguration();
       const commandArgs = this.buildCommandArgs(config, document.uri.fsPath);
 
-      this.outputChannel.appendLine(
-        `Executing slim-lint: ${commandArgs.join(' ')}`
-      );
-      if (process.env.NODE_ENV === 'test') {
-        console.log(`Executing slim-lint: ${commandArgs.join(' ')}`);
-      }
+      this.log(`Executing: ${commandArgs.join(' ')}`, 'info', true);
 
       // Execute slim-lint
       const { stdout, stderr, failed, code } =
@@ -551,84 +553,44 @@ export default class Linter implements vscode.Disposable {
         return;
       }
 
-      this.outputChannel.appendLine(`slim-lint stdout: ${stdout}`);
-      if (process.env.NODE_ENV === 'test') {
-        console.log(`slim-lint stdout: ${stdout}`);
+      if (stdout) {
+        this.log(`Found ${stdout.split('\n').filter(line => line.trim()).length} issues`, 'info', true);
       }
 
       if (stderr) {
-        this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
-        if (process.env.NODE_ENV === 'test') {
-          console.log(`slim-lint stderr: ${stderr}`);
-        }
-
-        // Show error message in VS Code window when stderr exists
-        const errorMessage = `slim-lint error: ${stderr.trim()}`;
-        window.showErrorMessage(errorMessage);
-        this.outputChannel.appendLine(
-          `Error displayed to user: ${errorMessage}`
-        );
-        if (process.env.NODE_ENV === 'test') {
-          console.log(`Error displayed to user: ${errorMessage}`);
-        }
+        this.log(`Error: ${stderr.trim()}`, 'error', true);
+        window.showErrorMessage(`slim-lint error: ${stderr.trim()}`);
         return;
       }
 
       // Check if command failed (only if there's no stdout and there's stderr)
       // slim-lint returns non-zero exit code when it finds issues, which is normal
       if (failed && !stdout && stderr) {
-        const errorMessage = `slim-lint failed: ${code}`;
-        this.outputChannel.appendLine(`slim-lint stderr: ${errorMessage}`);
-        if (process.env.NODE_ENV === 'test') {
-          console.log(`slim-lint stderr: ${errorMessage}`);
-        }
-
-        // Show error message in VS Code window when command fails
-        window.showErrorMessage(errorMessage);
-        this.outputChannel.appendLine(
-          `Error displayed to user: ${errorMessage}`
-        );
-        if (process.env.NODE_ENV === 'test') {
-          console.log(`Error displayed to user: ${errorMessage}`);
-        }
+        this.log(`Failed with code: ${code}`, 'error', true);
+        window.showErrorMessage(`slim-lint failed: ${code}`);
         return;
       }
 
       // Check if document content changed during linting
       if (originalText !== document.getText()) {
-        this.outputChannel.appendLine(
-          'Document content changed during linting, skipping update'
-        );
         const duration = Date.now() - startTime;
-        this.outputChannel.appendLine(
-          `⏱️ Linting skipped after ${duration}ms (content changed)`
-        );
+        this.log(`Skipped (content changed) after ${duration}ms`, 'warn');
         return;
       }
 
       // Parse output and update diagnostics
       const diagnostics = this.parseOutput(stdout, document);
-      this.outputChannel.appendLine(`Parsed ${diagnostics.length} diagnostics`);
-      if (process.env.NODE_ENV === 'test') {
-        console.log(`Parsed ${diagnostics.length} diagnostics`);
-      }
       this.updateDiagnostics(document, diagnostics);
 
       // Log performance timing
       const duration = Date.now() - startTime;
-      this.outputChannel.appendLine(
-        `⏱️ Linting completed in ${duration}ms (${diagnostics.length} diagnostics, ${fileSize} bytes)`
-      );
+      this.log(`Completed in ${duration}ms (${diagnostics.length} diagnostics)`, 'info', true);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      this.outputChannel.appendLine(`Error during linting: ${errorMessage}`);
-
-      // Log performance timing even for errors
       const duration = Date.now() - startTime;
-      this.outputChannel.appendLine(
-        `⏱️ Linting failed after ${duration}ms (${fileSize} bytes)`
-      );
+      
+      this.log(`Failed after ${duration}ms: ${errorMessage}`, 'error');
 
       if (!this.disposed) {
         // Provide specific error messages based on error type
@@ -656,7 +618,6 @@ export default class Linter implements vscode.Disposable {
         }
 
         window.showErrorMessage(userMessage);
-        this.outputChannel.appendLine(`User message: ${userMessage}`);
       }
     }
   }
