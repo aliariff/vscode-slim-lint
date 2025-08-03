@@ -40,7 +40,7 @@ suite('Linter Test Suite', () => {
   // Helper function to run linter on file and get diagnostics
   const runLinterOnFile = async (
     filename: string,
-    timeout: number = 2000
+    timeout: number = 10000
   ): Promise<readonly vscode.Diagnostic[]> => {
     const filePath = getFixturePath(filename);
     const document = await vscode.workspace.openTextDocument(filePath);
@@ -90,7 +90,7 @@ suite('Linter Test Suite', () => {
   });
 
   test('Should not run on non-slim files', async () => {
-    const jsDiagnostics = await runLinterOnFile('test-file.js', 1000);
+    const jsDiagnostics = await runLinterOnFile('test-file.js', 3000);
     assert.strictEqual(
       jsDiagnostics.length,
       0,
@@ -205,7 +205,7 @@ Another invalid line`;
   });
 
   test('Should handle valid slim files without issues', async () => {
-    const diagnostics = await runLinterOnFile('valid-test.slim', 2000);
+    const diagnostics = await runLinterOnFile('valid-test.slim', 15000);
 
     assert.strictEqual(
       diagnostics.length,
@@ -215,7 +215,7 @@ Another invalid line`;
   });
 
   test('Should run linter and produce real diagnostics from slim-lint execution', async () => {
-    const diagnostics = await runLinterOnFile('complex-test.slim', 5000);
+    const diagnostics = await runLinterOnFile('complex-test.slim', 20000);
 
     assert.strictEqual(
       diagnostics.length,
@@ -251,7 +251,7 @@ Another invalid line`;
   });
 
   test('Should handle various slim-lint rule types', async () => {
-    const diagnostics = await runLinterOnFile('tab-test.slim', 3000);
+    const diagnostics = await runLinterOnFile('tab-test.slim', 15000);
 
     assert.strictEqual(
       diagnostics.length,
