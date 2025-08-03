@@ -299,7 +299,9 @@ export default class Linter implements vscode.Disposable {
       try {
         // Check if command exists in PATH (cross-platform)
         const checkCommand = process.platform === 'win32' ? 'where' : 'which';
-        const { stdout } = await execa(checkCommand, [command], { reject: false });
+        const { stdout } = await execa(checkCommand, [command], {
+          reject: false,
+        });
         if (stdout && stdout.trim()) {
           executableExists = true;
           executablePath = stdout.trim();
@@ -377,11 +379,14 @@ export default class Linter implements vscode.Disposable {
         if (
           stderr.includes('command not found') ||
           stderr.includes('not found') ||
-          stderr.includes('is not recognized as an internal or external command')
+          stderr.includes(
+            'is not recognized as an internal or external command'
+          )
         ) {
-          const installMessage = process.platform === 'win32' 
-            ? 'slim-lint not found. Please install slim-lint: gem install slim_lint. On Windows, ensure Ruby and slim-lint are in your PATH.'
-            : 'slim-lint not found. Please install slim-lint: gem install slim_lint';
+          const installMessage =
+            process.platform === 'win32'
+              ? 'slim-lint not found. Please install slim-lint: gem install slim_lint. On Windows, ensure Ruby and slim-lint are in your PATH.'
+              : 'slim-lint not found. Please install slim-lint: gem install slim_lint';
           window.showErrorMessage(installMessage);
           this.outputChannel.appendLine(installMessage);
         } else if (stderr.includes('permission denied')) {
@@ -408,9 +413,10 @@ export default class Linter implements vscode.Disposable {
       );
 
       // Provide helpful installation instructions based on error type
-      let installMessage = process.platform === 'win32'
-        ? 'slim-lint not found. Please install slim-lint: gem install slim_lint. On Windows, ensure Ruby and slim-lint are in your PATH.'
-        : 'slim-lint not found. Please install slim-lint: gem install slim_lint';
+      let installMessage =
+        process.platform === 'win32'
+          ? 'slim-lint not found. Please install slim-lint: gem install slim_lint. On Windows, ensure Ruby and slim-lint are in your PATH.'
+          : 'slim-lint not found. Please install slim-lint: gem install slim_lint';
 
       if (errorMessage.includes('timeout')) {
         installMessage =
@@ -419,9 +425,10 @@ export default class Linter implements vscode.Disposable {
         installMessage =
           'slim-lint permission denied. Please check file permissions and try again.';
       } else if (errorMessage.includes('ENOENT')) {
-        installMessage = process.platform === 'win32'
-          ? 'slim-lint executable not found. Please install slim-lint: gem install slim_lint. On Windows, ensure Ruby and slim-lint are in your PATH.'
-          : 'slim-lint executable not found. Please install slim-lint: gem install slim_lint';
+        installMessage =
+          process.platform === 'win32'
+            ? 'slim-lint executable not found. Please install slim-lint: gem install slim_lint. On Windows, ensure Ruby and slim-lint are in your PATH.'
+            : 'slim-lint executable not found. Please install slim-lint: gem install slim_lint';
       }
 
       window.showErrorMessage(installMessage);
@@ -641,9 +648,10 @@ export default class Linter implements vscode.Disposable {
           userMessage =
             'slim-lint permission denied. Please check file permissions.';
         } else if (errorMessage.includes('ENOENT')) {
-          userMessage = process.platform === 'win32'
-            ? 'slim-lint executable not found. Please install slim-lint: gem install slim_lint. On Windows, ensure Ruby and slim-lint are in your PATH.'
-            : 'slim-lint executable not found. Please install slim-lint: gem install slim_lint';
+          userMessage =
+            process.platform === 'win32'
+              ? 'slim-lint executable not found. Please install slim-lint: gem install slim_lint. On Windows, ensure Ruby and slim-lint are in your PATH.'
+              : 'slim-lint executable not found. Please install slim-lint: gem install slim_lint';
         }
 
         window.showErrorMessage(userMessage);
