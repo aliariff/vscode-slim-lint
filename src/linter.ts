@@ -513,6 +513,7 @@ export default class Linter implements vscode.Disposable {
       this.outputChannel.appendLine(
         `Executing slim-lint: ${commandArgs.join(' ')}`
       );
+      console.log(`Executing slim-lint: ${commandArgs.join(' ')}`);
 
       // Execute slim-lint
       const { stdout, stderr } = await this.executeSlimLint(commandArgs);
@@ -523,13 +524,19 @@ export default class Linter implements vscode.Disposable {
       }
 
       this.outputChannel.appendLine(`slim-lint stdout: ${stdout}`);
+      console.log(`slim-lint stdout: ${stdout}`);
+      
       if (stderr) {
         this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
-        
+        console.log(`slim-lint stderr: ${stderr}`);
+
         // Show error message in VS Code window when stderr exists
         const errorMessage = `slim-lint error: ${stderr.trim()}`;
         window.showErrorMessage(errorMessage);
-        this.outputChannel.appendLine(`Error displayed to user: ${errorMessage}`);
+        this.outputChannel.appendLine(
+          `Error displayed to user: ${errorMessage}`
+        );
+        console.log(`Error displayed to user: ${errorMessage}`);
         return;
       }
 
@@ -548,6 +555,7 @@ export default class Linter implements vscode.Disposable {
       // Parse output and update diagnostics
       const diagnostics = this.parseOutput(stdout, document);
       this.outputChannel.appendLine(`Parsed ${diagnostics.length} diagnostics`);
+      console.log(`Parsed ${diagnostics.length} diagnostics`);
       this.updateDiagnostics(document, diagnostics);
 
       // Log performance timing
