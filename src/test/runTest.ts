@@ -5,6 +5,11 @@ async function main(): Promise<void> {
   try {
     // Set test environment
     process.env.NODE_ENV = 'test';
+    
+    // Suppress Electron/Chromium warnings
+    process.env.ELECTRON_DISABLE_SANDBOX = 'true';
+    process.env.ELECTRON_NO_ATTACH_CONSOLE = 'true';
+    process.env.ELECTRON_ENABLE_LOGGING = 'false';
 
     // The folder containing the Extension Manifest package.json
     const extensionDevelopmentPath = path.resolve(__dirname, '../../');
@@ -19,15 +24,9 @@ async function main(): Promise<void> {
       launchArgs: [
         '--disable-extensions',
         '--disable-gpu',
-        '--disable-software-rasterizer',
         '--disable-dev-shm-usage',
         '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
         '--disable-features=TranslateUI',
-        '--disable-ipc-flooding-protection',
       ],
     });
   } catch (err) {

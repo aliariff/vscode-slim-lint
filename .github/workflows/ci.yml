@@ -68,6 +68,8 @@ jobs:
         env:
           DISPLAY: ${{ matrix.os == 'ubuntu-latest' && ':99' || '' }}
           ELECTRON_DISABLE_SANDBOX: 'true'
+          ELECTRON_NO_ATTACH_CONSOLE: 'true'
+          ELECTRON_ENABLE_LOGGING: 'false'
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
