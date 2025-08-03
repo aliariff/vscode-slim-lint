@@ -574,8 +574,9 @@ export default class Linter implements vscode.Disposable {
         return;
       }
 
-      // Check if command failed (even with empty stderr)
-      if (failed) {
+      // Check if command failed (only if there's no stdout and there's stderr)
+      // slim-lint returns non-zero exit code when it finds issues, which is normal
+      if (failed && !stdout && stderr) {
         const errorMessage = `slim-lint failed: ${code}`;
         this.outputChannel.appendLine(`slim-lint stderr: ${errorMessage}`);
         if (process.env.NODE_ENV === 'test') {
