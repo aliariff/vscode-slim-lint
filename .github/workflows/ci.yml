@@ -69,8 +69,6 @@ jobs:
           DISPLAY: ${{ matrix.os == 'ubuntu-latest' && ':99' || '' }}
           ELECTRON_DISABLE_SANDBOX: 'true'
 
-
-
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
