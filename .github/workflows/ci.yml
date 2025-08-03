@@ -28,6 +28,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Setup virtual display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+
       - name: Run ESLint
         run: npm run lint
 
@@ -39,6 +45,9 @@ jobs:
 
       - name: Run tests
         run: npm test
+        env:
+          DISPLAY: ':99'
+          ELECTRON_DISABLE_SANDBOX: 'true'
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -79,4 +88,4 @@ jobs:
             echo "Code formatting changes detected. Please run 'npm run format' and commit the changes."
             git diff
             exit 1
-          fi 
+          fi

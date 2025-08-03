@@ -46,4 +46,4 @@ jobs:
         with:
           name: slim-lint-extension
           path: '*.vsix'
-          retention-days: 30 
+          retention-days: 30
