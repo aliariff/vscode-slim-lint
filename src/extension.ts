@@ -18,9 +18,29 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(linter);
 
     const updateDiagnostics = (document: vscode.TextDocument): void => {
-      if (linter) {
-        linter.run(document);
+      if (linter && !linter['disposed']) {
+        try {
+          linter.run(document);
+        } catch (error) {
+          outputChannel.appendLine(`Error running linter: ${error}`);
+        }
       }
+    };
+
+    const clearDiagnostics = (document: vscode.TextDocument): void => {
+      if (linter && !linter['disposed']) {
+        try {
+          linter.clear(document);
+        } catch (error) {
+          outputChannel.appendLine(`Error clearing diagnostics: ${error}`);
+        }
+      }
+    };
+
+    const handleDocumentChange = (event: vscode.TextDocumentChangeEvent): void => {
+      // We could potentially use event.contentChanges or event.reason here
+      // For now, we just run the linter on the changed document
+      updateDiagnostics(event.document);
     };
 
     // Listen for document save events
@@ -35,11 +55,12 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Listen for document close events
     context.subscriptions.push(
-      vscode.workspace.onDidCloseTextDocument(document => {
-        if (linter) {
-          linter.clear(document);
-        }
-      })
+      vscode.workspace.onDidCloseTextDocument(clearDiagnostics)
+    );
+
+    // Listen for document change events
+    context.subscriptions.push(
+      vscode.workspace.onDidChangeTextDocument(handleDocumentChange)
     );
 
     // Lint all open documents
@@ -53,7 +74,13 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate(): void {
   if (linter) {
-    linter.dispose();
+    try {
+      linter.dispose();
+    } catch (error) {
+      if (outputChannel) {
+        outputChannel.appendLine(`Error disposing linter: ${error}`);
+      }
+    }
   }
   
   if (outputChannel) {
