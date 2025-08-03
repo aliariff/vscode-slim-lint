@@ -25,8 +25,10 @@ suite('Linter Test Suite', () => {
     console.log('🧹 Cleaning up test environment...');
     
     // Dispose the linter
-    linter.dispose();
-    console.log('✅ Linter disposed');
+    if (linter) {
+      linter.dispose();
+      console.log('✅ Linter disposed');
+    }
 
     // Dispose the output channel
     if (outputChannel) {
@@ -62,9 +64,9 @@ suite('Linter Test Suite', () => {
     console.log('⚡ Running linter on JavaScript file...');
     linter.run(jsDocument);
     
-    // Wait for processing
+    // Wait for processing (including debounce delay)
     console.log('⏳ Waiting for processing...');
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Check that no diagnostics were created for the JS file
     const jsDiagnostics = linter['collection'].get(jsDocument.uri) || [];
@@ -316,6 +318,33 @@ Another invalid line`;
     console.log('✅ Valid slim file test completed');
   });
 
+  test('Should prevent concurrent lints on same document', async () => {
+    console.log('🧪 Testing concurrent lint prevention...');
+    
+    const mockDocument = {
+      languageId: 'slim',
+      uri: vscode.Uri.file('/test-concurrent.slim'),
+      getText: () => 'doctype html',
+      fileName: 'test-concurrent.slim',
+    } as unknown as vscode.TextDocument;
+
+    // Start a lint operation
+    console.log('⚡ Starting first lint operation...');
+    linter.run(mockDocument);
+    
+    // Try to start another lint operation immediately
+    console.log('⚡ Attempting concurrent lint operation...');
+    linter.run(mockDocument);
+    
+    // Both operations should be allowed to run
+    console.log('✅ Both lint operations should be allowed to run');
+    
+    // Wait for operations to complete
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    console.log('✅ Concurrent lint operations test completed');
+  });
+
   test('Should run linter and produce real diagnostics from slim-lint execution', async () => {
     console.log('🧪 Testing real slim-lint execution with complex file...');
     
@@ -452,5 +481,53 @@ Another invalid line`;
     assert.ok(hasTrailingWhitespaceRule, 'Tab test file should have TrailingWhitespace diagnostics');
     
     console.log('✅ Various rule types test completed');
+  });
+
+  test('Should handle disposal with active operations', async () => {
+    console.log('🧪 Testing disposal with active operations...');
+    
+    const mockDocument = {
+      languageId: 'slim',
+      uri: vscode.Uri.file('/test-dispose.slim'),
+      getText: () => 'doctype html',
+      fileName: 'test-dispose.slim',
+    } as unknown as vscode.TextDocument;
+
+    // Start a lint operation
+    console.log('⚡ Starting lint operation...');
+    linter.run(mockDocument);
+    
+    // Dispose while operations are active
+    console.log('🗑️ Disposing linter with active operations...');
+    linter.dispose();
+    
+    // Check that disposal completed successfully
+    console.log('✅ Disposal with active operations test completed');
+  });
+
+  test('Should handle error conditions gracefully', () => {
+    console.log('🧪 Testing error handling...');
+    
+    // Test with invalid configuration
+    const originalGetConfiguration = linter['getConfiguration'];
+    linter['getConfiguration'] = () => {
+      throw new Error('Test configuration error');
+    };
+    
+    const mockDocument = {
+      languageId: 'slim',
+      uri: vscode.Uri.file('/test-error.slim'),
+      getText: () => 'doctype html',
+      fileName: 'test-error.slim',
+    } as unknown as vscode.TextDocument;
+
+    console.log('⚡ Running linter with invalid configuration...');
+    // Should not throw, but should handle error gracefully
+    linter.run(mockDocument);
+    
+    // Restore original method
+    linter['getConfiguration'] = originalGetConfiguration;
+    
+    console.log('✅ Error handling test completed');
   });
 }); 

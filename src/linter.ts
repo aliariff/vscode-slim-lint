@@ -19,6 +19,7 @@ const SLIM_LANGUAGE_ID = 'slim';
 const DIAGNOSTIC_COLLECTION_NAME = 'slim-lint';
 const DEFAULT_CONFIG_FILE = '.slim-lint.yml';
 const SLIM_LINT_OUTPUT_REGEX = /.+?:(\d+) \[(W|E)] (\w+): (.+)/g;
+const LINT_TIMEOUT = 30000; // 30 seconds
 
 // Types
 interface SlimLintConfig {
@@ -171,8 +172,6 @@ export default class Linter implements vscode.Disposable {
     return args;
   }
 
-
-
   /**
    * Execute slim-lint command
    * @param commandArgs The command arguments
@@ -186,13 +185,17 @@ export default class Linter implements vscode.Disposable {
       const execaProcess = execa(command, args, {
         reject: false,
         cwd,
+        timeout: LINT_TIMEOUT,
       });
 
       const { stdout, stderr } = await execaProcess;
       
       if (stderr) {
         this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
-        window.showErrorMessage(`slim-lint error: ${stderr}`);
+        // Only show error message for actual errors, not warnings
+        if (stderr.includes('error') || stderr.includes('not found')) {
+          window.showErrorMessage(`slim-lint error: ${stderr}`);
+        }
       }
 
       return { stdout, stderr };
@@ -314,7 +317,9 @@ export default class Linter implements vscode.Disposable {
 
     } catch (error) {
       this.outputChannel.appendLine(`Error during linting: ${error}`);
-      window.showErrorMessage(`slim-lint execution failed: ${error}`);
+      if (!this.disposed) {
+        window.showErrorMessage(`slim-lint execution failed: ${error}`);
+      }
     }
   }
 }
