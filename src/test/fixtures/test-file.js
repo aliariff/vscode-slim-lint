@@ -1,4 +1,4 @@
-console.log("test");
+console.log('test');
 function testFunction() {
-  return "hello world";
-} 
+  return 'hello world';
+}

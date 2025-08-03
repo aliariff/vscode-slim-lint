@@ -38,7 +38,9 @@ export default class Linter implements vscode.Disposable {
   private disposed: boolean = false;
 
   constructor(outputChannel: vscode.OutputChannel) {
-    this.collection = languages.createDiagnosticCollection(DIAGNOSTIC_COLLECTION_NAME);
+    this.collection = languages.createDiagnosticCollection(
+      DIAGNOSTIC_COLLECTION_NAME
+    );
     this.outputChannel = outputChannel;
   }
 
@@ -49,13 +51,15 @@ export default class Linter implements vscode.Disposable {
     if (this.disposed) {
       return;
     }
-    
+
     this.disposed = true;
-    
+
     if (this.outputChannel) {
-      this.outputChannel.appendLine('Disposing linter and cleaning up resources');
+      this.outputChannel.appendLine(
+        'Disposing linter and cleaning up resources'
+      );
     }
-    
+
     if (this.collection) {
       this.collection.dispose();
     }
@@ -69,9 +73,11 @@ export default class Linter implements vscode.Disposable {
     if (this.disposed) {
       return;
     }
-    
+
     if (!this.shouldLintDocument(document)) {
-      this.outputChannel.appendLine(`Skipping lint for non-slim file: ${document.fileName}`);
+      this.outputChannel.appendLine(
+        `Skipping lint for non-slim file: ${document.fileName}`
+      );
       return;
     }
 
@@ -87,9 +93,11 @@ export default class Linter implements vscode.Disposable {
     if (this.disposed) {
       return;
     }
-    
+
     if (this.isFileDocument(document)) {
-      this.outputChannel.appendLine(`Clearing diagnostics for: ${document.fileName}`);
+      this.outputChannel.appendLine(
+        `Clearing diagnostics for: ${document.fileName}`
+      );
       this.collection.delete(document.uri);
     }
   }
@@ -120,40 +128,53 @@ export default class Linter implements vscode.Disposable {
     const config = workspace.getConfiguration('slimLint');
     const executablePath = config.get('executablePath') as string;
     const configurationPath = config.get('configurationPath') as string;
-    
+
     // Enhanced configuration validation
     if (!executablePath || executablePath.trim() === '') {
-      const errorMessage = 'slim-lint executable path is not configured. Please set slimLint.executablePath in your settings.';
+      const errorMessage =
+        'slim-lint executable path is not configured. Please set slimLint.executablePath in your settings.';
       this.outputChannel.appendLine(errorMessage);
       throw new Error(errorMessage);
     }
-    
+
     if (!configurationPath || configurationPath.trim() === '') {
-      const errorMessage = 'slim-lint configuration path is not configured. Please set slimLint.configurationPath in your settings.';
+      const errorMessage =
+        'slim-lint configuration path is not configured. Please set slimLint.configurationPath in your settings.';
       this.outputChannel.appendLine(errorMessage);
       throw new Error(errorMessage);
     }
-    
+
     // Validate executable path format
-    if (executablePath.includes(' ') && !executablePath.startsWith('"') && !executablePath.endsWith('"')) {
-      this.outputChannel.appendLine(`Warning: Executable path contains spaces: "${executablePath}". Consider wrapping in quotes if needed.`);
+    if (
+      executablePath.includes(' ') &&
+      !executablePath.startsWith('"') &&
+      !executablePath.endsWith('"')
+    ) {
+      this.outputChannel.appendLine(
+        `Warning: Executable path contains spaces: "${executablePath}". Consider wrapping in quotes if needed.`
+      );
     }
-    
+
     // Validate executable path structure
     const [command] = executablePath.split(/\s+/);
     if (!command || command.trim() === '') {
-      const errorMessage = 'slim-lint executable path is malformed. Please check your slimLint.executablePath setting.';
+      const errorMessage =
+        'slim-lint executable path is malformed. Please check your slimLint.executablePath setting.';
       this.outputChannel.appendLine(errorMessage);
       throw new Error(errorMessage);
     }
-    
+
     // Check for common executable names
     const validExecutables = ['slim-lint', 'slim_lint', 'bundle', 'gem'];
-    const isKnownExecutable = validExecutables.some(valid => command.includes(valid));
+    const isKnownExecutable = validExecutables.some(valid =>
+      command.includes(valid)
+    );
     if (!isKnownExecutable) {
-      this.outputChannel.appendLine(`Warning: Executable '${command}' is not a known slim-lint executable. Expected: slim-lint, slim_lint, bundle exec slim-lint, or gem exec slim-lint`);
+      this.outputChannel.appendLine(
+        `Warning: Executable '${command}' is not a known slim-lint executable. Expected: slim-lint, slim_lint, bundle exec slim-lint, or gem exec slim-lint`
+      );
     }
-    
+
     return {
       executablePath,
       configurationPath,
@@ -178,18 +199,23 @@ export default class Linter implements vscode.Disposable {
    * @param documentPath The path to the document to lint
    * @returns The command arguments
    */
-  private buildCommandArgs(config: SlimLintConfig, documentPath: string): string[] {
+  private buildCommandArgs(
+    config: SlimLintConfig,
+    documentPath: string
+  ): string[] {
     const [command, ...baseArgs] = config.executablePath.split(/\s+/);
     const args = [command, ...baseArgs];
 
-    const resolvedConfigPath = this.resolveConfigurationPath(config.configurationPath);
-    
+    const resolvedConfigPath = this.resolveConfigurationPath(
+      config.configurationPath
+    );
+
     // Enhanced configuration file validation
     if (fs.existsSync(resolvedConfigPath)) {
       try {
         // Check if file is readable
         fs.accessSync(resolvedConfigPath, fs.constants.R_OK);
-        
+
         // Validate file size (prevent reading extremely large files)
         const stats = fs.statSync(resolvedConfigPath);
         const maxSize = 1024 * 1024; // 1MB
@@ -197,7 +223,7 @@ export default class Linter implements vscode.Disposable {
           const warningMessage = `Configuration file ${resolvedConfigPath} is very large (${Math.round(stats.size / 1024)}KB). This may cause performance issues.`;
           this.outputChannel.appendLine(warningMessage);
         }
-        
+
         // Validate file extension
         const validExtensions = ['.yml', '.yaml'];
         const fileExt = path.extname(resolvedConfigPath).toLowerCase();
@@ -205,9 +231,11 @@ export default class Linter implements vscode.Disposable {
           const warningMessage = `Configuration file ${resolvedConfigPath} has unexpected extension '${fileExt}'. Expected: .yml or .yaml`;
           this.outputChannel.appendLine(warningMessage);
         }
-        
+
         args.push('--config', resolvedConfigPath);
-        this.outputChannel.appendLine(`Using configuration file: ${resolvedConfigPath}`);
+        this.outputChannel.appendLine(
+          `Using configuration file: ${resolvedConfigPath}`
+        );
       } catch (accessError) {
         const errorMessage = `Configuration file ${resolvedConfigPath} exists but is not readable. Check file permissions.`;
         this.outputChannel.appendLine(errorMessage);
@@ -216,16 +244,24 @@ export default class Linter implements vscode.Disposable {
     } else {
       const warningMessage = `Configuration file ${resolvedConfigPath} does not exist! Using default slim-lint settings.`;
       this.outputChannel.appendLine(warningMessage);
-      
+
       // Provide helpful guidance
-      const guidanceMessage = 'To use a custom configuration, create a .slim-lint.yml file in your project root or set slimLint.configurationPath in your settings.';
+      const guidanceMessage =
+        'To use a custom configuration, create a .slim-lint.yml file in your project root or set slimLint.configurationPath in your settings.';
       this.outputChannel.appendLine(guidanceMessage);
-      
+
       // Check if there are any .slim-lint.yml files in the project
       const projectRoot = process.cwd();
-      const possibleConfigs = ['.slim-lint.yml', '.slim-lint.yaml', 'slim-lint.yml', 'slim-lint.yaml'];
-      const foundConfigs = possibleConfigs.filter(config => fs.existsSync(path.join(projectRoot, config)));
-      
+      const possibleConfigs = [
+        '.slim-lint.yml',
+        '.slim-lint.yaml',
+        'slim-lint.yml',
+        'slim-lint.yaml',
+      ];
+      const foundConfigs = possibleConfigs.filter(config =>
+        fs.existsSync(path.join(projectRoot, config))
+      );
+
       if (foundConfigs.length > 0) {
         const suggestionMessage = `Found potential configuration files: ${foundConfigs.join(', ')}. Consider updating slimLint.configurationPath setting.`;
         this.outputChannel.appendLine(suggestionMessage);
@@ -241,7 +277,9 @@ export default class Linter implements vscode.Disposable {
    * @param commandArgs The command arguments
    * @returns The slim-lint output
    */
-  private async executeSlimLint(commandArgs: string[]): Promise<SlimLintOutput> {
+  private async executeSlimLint(
+    commandArgs: string[]
+  ): Promise<SlimLintOutput> {
     const [command, ...args] = commandArgs;
     const cwd = process.cwd();
 
@@ -254,7 +292,7 @@ export default class Linter implements vscode.Disposable {
       // Enhanced executable validation
       let executableExists = false;
       let executablePath = '';
-      
+
       try {
         // Check if command exists in PATH
         const { stdout } = await execa('which', [command], { reject: false });
@@ -266,26 +304,36 @@ export default class Linter implements vscode.Disposable {
       } catch (whichError) {
         this.outputChannel.appendLine(`Command '${command}' not found in PATH`);
       }
-      
+
       // Additional validation for common slim-lint scenarios
       if (!executableExists) {
         // Check if it's a bundle exec command
         if (command === 'bundle') {
           try {
-            const { stdout } = await execa('bundle', ['exec', 'slim-lint', '--version'], { reject: false });
+            const { stdout } = await execa(
+              'bundle',
+              ['exec', 'slim-lint', '--version'],
+              { reject: false }
+            );
             if (stdout) {
               executableExists = true;
               this.outputChannel.appendLine('Found slim-lint via bundle exec');
             }
           } catch (bundleError) {
-            this.outputChannel.appendLine('bundle exec slim-lint not available');
+            this.outputChannel.appendLine(
+              'bundle exec slim-lint not available'
+            );
           }
         }
-        
+
         // Check if it's a gem exec command
         if (command === 'gem') {
           try {
-            const { stdout } = await execa('gem', ['exec', 'slim-lint', '--version'], { reject: false });
+            const { stdout } = await execa(
+              'gem',
+              ['exec', 'slim-lint', '--version'],
+              { reject: false }
+            );
             if (stdout) {
               executableExists = true;
               this.outputChannel.appendLine('Found slim-lint via gem exec');
@@ -295,9 +343,11 @@ export default class Linter implements vscode.Disposable {
           }
         }
       }
-      
+
       if (!executableExists) {
-        this.outputChannel.appendLine(`Warning: Could not verify executable '${command}'. slim-lint may not be installed or not in PATH.`);
+        this.outputChannel.appendLine(
+          `Warning: Could not verify executable '${command}'. slim-lint may not be installed or not in PATH.`
+        );
       }
 
       const execaProcess = execa(command, args, {
@@ -307,21 +357,27 @@ export default class Linter implements vscode.Disposable {
       });
 
       const { stdout, stderr } = await execaProcess;
-      
+
       if (stderr) {
         this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
-        
+
         // Provide specific error messages based on stderr content
-        if (stderr.includes('command not found') || stderr.includes('not found')) {
-          const installMessage = 'slim-lint not found. Please install slim-lint: gem install slim_lint';
+        if (
+          stderr.includes('command not found') ||
+          stderr.includes('not found')
+        ) {
+          const installMessage =
+            'slim-lint not found. Please install slim-lint: gem install slim_lint';
           window.showErrorMessage(installMessage);
           this.outputChannel.appendLine(installMessage);
         } else if (stderr.includes('permission denied')) {
-          const permissionMessage = 'slim-lint permission denied. Please check file permissions.';
+          const permissionMessage =
+            'slim-lint permission denied. Please check file permissions.';
           window.showErrorMessage(permissionMessage);
           this.outputChannel.appendLine(permissionMessage);
         } else if (stderr.includes('timeout')) {
-          const timeoutMessage = 'slim-lint execution timed out. Please check your configuration.';
+          const timeoutMessage =
+            'slim-lint execution timed out. Please check your configuration.';
           window.showErrorMessage(timeoutMessage);
           this.outputChannel.appendLine(timeoutMessage);
         } else if (stderr.includes('error') || stderr.includes('failed')) {
@@ -331,24 +387,34 @@ export default class Linter implements vscode.Disposable {
 
       return { stdout, stderr };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      this.outputChannel.appendLine(`Failed to execute slim-lint: ${errorMessage}`);
-      
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(
+        `Failed to execute slim-lint: ${errorMessage}`
+      );
+
       // Provide helpful installation instructions based on error type
-      let installMessage = 'slim-lint not found. Please install slim-lint: gem install slim_lint';
-      
+      let installMessage =
+        'slim-lint not found. Please install slim-lint: gem install slim_lint';
+
       if (errorMessage.includes('timeout')) {
-        installMessage = 'slim-lint execution timed out. Please check your configuration or increase timeout.';
+        installMessage =
+          'slim-lint execution timed out. Please check your configuration or increase timeout.';
       } else if (errorMessage.includes('permission')) {
-        installMessage = 'slim-lint permission denied. Please check file permissions and try again.';
+        installMessage =
+          'slim-lint permission denied. Please check file permissions and try again.';
       } else if (errorMessage.includes('ENOENT')) {
-        installMessage = 'slim-lint executable not found. Please install slim-lint: gem install slim_lint';
+        installMessage =
+          'slim-lint executable not found. Please install slim-lint: gem install slim_lint';
       }
-      
+
       window.showErrorMessage(installMessage);
       this.outputChannel.appendLine(installMessage);
-      
-      return { stdout: '', stderr: `slim-lint execution failed: ${errorMessage}` };
+
+      return {
+        stdout: '',
+        stderr: `slim-lint execution failed: ${errorMessage}`,
+      };
     }
   }
 
@@ -379,18 +445,22 @@ export default class Linter implements vscode.Disposable {
    * @param document The text document
    * @returns The diagnostic or null if invalid
    */
-  private createDiagnostic(match: RegExpExecArray, document: TextDocument): Diagnostic | null {
+  private createDiagnostic(
+    match: RegExpExecArray,
+    document: TextDocument
+  ): Diagnostic | null {
     try {
       const [, lineStr, severityChar, ruleName, message] = match;
       const line = Math.max(parseInt(lineStr, 10) - 1, 0);
-      
+
       if (line >= document.lineCount) {
         return null;
       }
 
-      const severity = severityChar === 'W' 
-        ? DiagnosticSeverity.Warning 
-        : DiagnosticSeverity.Error;
+      const severity =
+        severityChar === 'W'
+          ? DiagnosticSeverity.Warning
+          : DiagnosticSeverity.Error;
 
       const lineText = document.lineAt(line);
       const range = new Range(
@@ -410,11 +480,14 @@ export default class Linter implements vscode.Disposable {
    * @param document The text document
    * @param diagnostics The diagnostics to set
    */
-  private updateDiagnostics(document: TextDocument, diagnostics: Diagnostic[]): void {
+  private updateDiagnostics(
+    document: TextDocument,
+    diagnostics: Diagnostic[]
+  ): void {
     if (this.disposed) {
       return;
     }
-    
+
     this.collection.delete(document.uri);
     this.collection.set(document.uri, diagnostics);
   }
@@ -437,7 +510,9 @@ export default class Linter implements vscode.Disposable {
       const config = this.getConfiguration();
       const commandArgs = this.buildCommandArgs(config, document.uri.fsPath);
 
-      this.outputChannel.appendLine(`Executing slim-lint: ${commandArgs.join(' ')}`);
+      this.outputChannel.appendLine(
+        `Executing slim-lint: ${commandArgs.join(' ')}`
+      );
 
       // Execute slim-lint
       const { stdout, stderr } = await this.executeSlimLint(commandArgs);
@@ -454,9 +529,13 @@ export default class Linter implements vscode.Disposable {
 
       // Check if document content changed during linting
       if (originalText !== document.getText()) {
-        this.outputChannel.appendLine('Document content changed during linting, skipping update');
+        this.outputChannel.appendLine(
+          'Document content changed during linting, skipping update'
+        );
         const duration = Date.now() - startTime;
-        this.outputChannel.appendLine(`⏱️ Linting skipped after ${duration}ms (content changed)`);
+        this.outputChannel.appendLine(
+          `⏱️ Linting skipped after ${duration}ms (content changed)`
+        );
         return;
       }
 
@@ -467,32 +546,43 @@ export default class Linter implements vscode.Disposable {
 
       // Log performance timing
       const duration = Date.now() - startTime;
-      this.outputChannel.appendLine(`⏱️ Linting completed in ${duration}ms (${diagnostics.length} diagnostics, ${fileSize} bytes)`);
-
+      this.outputChannel.appendLine(
+        `⏱️ Linting completed in ${duration}ms (${diagnostics.length} diagnostics, ${fileSize} bytes)`
+      );
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.outputChannel.appendLine(`Error during linting: ${errorMessage}`);
-      
+
       // Log performance timing even for errors
       const duration = Date.now() - startTime;
-      this.outputChannel.appendLine(`⏱️ Linting failed after ${duration}ms (${fileSize} bytes)`);
-      
+      this.outputChannel.appendLine(
+        `⏱️ Linting failed after ${duration}ms (${fileSize} bytes)`
+      );
+
       if (!this.disposed) {
         // Provide specific error messages based on error type
         let userMessage = `slim-lint execution failed: ${errorMessage}`;
-        
+
         if (errorMessage.includes('executable path is not configured')) {
-          userMessage = 'slim-lint executable path is not configured. Please check your settings.';
-        } else if (errorMessage.includes('configuration path is not configured')) {
-          userMessage = 'slim-lint configuration path is not configured. Please check your settings.';
+          userMessage =
+            'slim-lint executable path is not configured. Please check your settings.';
+        } else if (
+          errorMessage.includes('configuration path is not configured')
+        ) {
+          userMessage =
+            'slim-lint configuration path is not configured. Please check your settings.';
         } else if (errorMessage.includes('timeout')) {
-          userMessage = 'slim-lint execution timed out. Please check your configuration or increase timeout.';
+          userMessage =
+            'slim-lint execution timed out. Please check your configuration or increase timeout.';
         } else if (errorMessage.includes('permission')) {
-          userMessage = 'slim-lint permission denied. Please check file permissions.';
+          userMessage =
+            'slim-lint permission denied. Please check file permissions.';
         } else if (errorMessage.includes('ENOENT')) {
-          userMessage = 'slim-lint executable not found. Please install slim-lint: gem install slim_lint';
+          userMessage =
+            'slim-lint executable not found. Please install slim-lint: gem install slim_lint';
         }
-        
+
         window.showErrorMessage(userMessage);
         this.outputChannel.appendLine(`User message: ${userMessage}`);
       }

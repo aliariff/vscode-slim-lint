@@ -15,50 +15,56 @@ function validateConfiguration(): void {
   const config = vscode.workspace.getConfiguration('slimLint');
   const executablePath = config.get('executablePath') as string;
   const configurationPath = config.get('configurationPath') as string;
-  
+
   // Basic configuration validation
   if (!executablePath || executablePath.trim() === '') {
-    const errorMessage = 'slim-lint executable path is not configured. Please set slimLint.executablePath in your settings.';
+    const errorMessage =
+      'slim-lint executable path is not configured. Please set slimLint.executablePath in your settings.';
     outputChannel.appendLine(errorMessage);
     vscode.window.showWarningMessage(errorMessage);
     return;
   }
-  
+
   if (!configurationPath || configurationPath.trim() === '') {
-    const errorMessage = 'slim-lint configuration path is not configured. Please set slimLint.configurationPath in your settings.';
+    const errorMessage =
+      'slim-lint configuration path is not configured. Please set slimLint.configurationPath in your settings.';
     outputChannel.appendLine(errorMessage);
     vscode.window.showWarningMessage(errorMessage);
     return;
   }
-  
+
   // Validate executable path structure
   const [command] = executablePath.split(/\s+/);
   if (!command || command.trim() === '') {
-    const errorMessage = 'slim-lint executable path is malformed. Please check your slimLint.executablePath setting.';
+    const errorMessage =
+      'slim-lint executable path is malformed. Please check your slimLint.executablePath setting.';
     outputChannel.appendLine(errorMessage);
     vscode.window.showWarningMessage(errorMessage);
     return;
   }
-  
+
   // Check for common executable names
   const validExecutables = ['slim-lint', 'slim_lint', 'bundle', 'gem'];
-  const isKnownExecutable = validExecutables.some(valid => command.includes(valid));
+  const isKnownExecutable = validExecutables.some(valid =>
+    command.includes(valid)
+  );
   if (!isKnownExecutable) {
     const warningMessage = `Executable '${command}' is not a known slim-lint executable. Expected: slim-lint, slim_lint, bundle exec slim-lint, or gem exec slim-lint`;
     outputChannel.appendLine(warningMessage);
     vscode.window.showWarningMessage(warningMessage);
   }
-  
+
   // Validate configuration file if it exists
-  const resolvedConfigPath = configurationPath === '.slim-lint.yml' 
-    ? path.join(process.cwd(), configurationPath)
-    : configurationPath;
-    
+  const resolvedConfigPath =
+    configurationPath === '.slim-lint.yml'
+      ? path.join(process.cwd(), configurationPath)
+      : configurationPath;
+
   if (fs.existsSync(resolvedConfigPath)) {
     try {
       // Check if file is readable
       fs.accessSync(resolvedConfigPath, fs.constants.R_OK);
-      
+
       // Validate file size
       const stats = fs.statSync(resolvedConfigPath);
       const maxSize = 1024 * 1024; // 1MB
@@ -67,7 +73,7 @@ function validateConfiguration(): void {
         outputChannel.appendLine(warningMessage);
         vscode.window.showWarningMessage(warningMessage);
       }
-      
+
       // Validate file extension
       const validExtensions = ['.yml', '.yaml'];
       const fileExt = path.extname(resolvedConfigPath).toLowerCase();
@@ -76,8 +82,10 @@ function validateConfiguration(): void {
         outputChannel.appendLine(warningMessage);
         vscode.window.showWarningMessage(warningMessage);
       }
-      
-      outputChannel.appendLine(`Configuration validation passed. Using: ${resolvedConfigPath}`);
+
+      outputChannel.appendLine(
+        `Configuration validation passed. Using: ${resolvedConfigPath}`
+      );
     } catch (accessError) {
       const errorMessage = `Configuration file ${resolvedConfigPath} exists but is not readable. Check file permissions.`;
       outputChannel.appendLine(errorMessage);
@@ -86,12 +94,19 @@ function validateConfiguration(): void {
   } else {
     const warningMessage = `Configuration file ${resolvedConfigPath} does not exist! Using default slim-lint settings.`;
     outputChannel.appendLine(warningMessage);
-    
+
     // Check if there are any .slim-lint.yml files in the project
     const projectRoot = process.cwd();
-    const possibleConfigs = ['.slim-lint.yml', '.slim-lint.yaml', 'slim-lint.yml', 'slim-lint.yaml'];
-    const foundConfigs = possibleConfigs.filter(config => fs.existsSync(path.join(projectRoot, config)));
-    
+    const possibleConfigs = [
+      '.slim-lint.yml',
+      '.slim-lint.yaml',
+      'slim-lint.yml',
+      'slim-lint.yaml',
+    ];
+    const foundConfigs = possibleConfigs.filter(config =>
+      fs.existsSync(path.join(projectRoot, config))
+    );
+
     if (foundConfigs.length > 0) {
       const suggestionMessage = `Found potential configuration files: ${foundConfigs.join(', ')}. Consider updating slimLint.configurationPath setting.`;
       outputChannel.appendLine(suggestionMessage);
@@ -134,7 +149,9 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     };
 
-    const handleDocumentChange = (event: vscode.TextDocumentChangeEvent): void => {
+    const handleDocumentChange = (
+      event: vscode.TextDocumentChangeEvent
+    ): void => {
       // We could potentially use event.contentChanges or event.reason here
       // For now, we just run the linter on the changed document
       updateDiagnostics(event.document);
@@ -162,10 +179,11 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Lint all open documents
     vscode.workspace.textDocuments.forEach(updateDiagnostics);
-    
   } catch (error) {
     outputChannel.appendLine(`Failed to initialize linter: ${error}`);
-    vscode.window.showErrorMessage(`Slim Lint extension failed to initialize: ${error}`);
+    vscode.window.showErrorMessage(
+      `Slim Lint extension failed to initialize: ${error}`
+    );
   }
 }
 
@@ -179,7 +197,7 @@ export function deactivate(): void {
       }
     }
   }
-  
+
   if (outputChannel) {
     outputChannel.appendLine('Slim Lint extension deactivated');
     outputChannel.dispose();
