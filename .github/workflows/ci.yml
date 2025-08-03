@@ -8,12 +8,26 @@ on:
 
 jobs:
   test:
-    name: Node.js ${{ matrix.node-version }}
-    runs-on: ubuntu-latest
+    name: Test on ${{ matrix.os }} with Node.js ${{ matrix.node-version }}
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        include:
+          # Node.js version testing on Ubuntu
+          - os: ubuntu-latest
+            node-version: '18.x'
+          - os: ubuntu-latest
+            node-version: '20.x'
+          - os: ubuntu-latest
+            node-version: '22.x'
+          # Cross-platform testing with Node.js 20
+          - os: ubuntu-latest
+            node-version: '20.x'
+          - os: windows-latest
+            node-version: '20.x'
+          - os: macos-latest
+            node-version: '20.x'
 
     steps:
       - name: Checkout code
@@ -32,63 +46,6 @@ jobs:
           bundler-cache: true
 
       - name: Install dependencies
-        run: npm ci
-
-      - name: Install slim-lint
-        run: |
-          gem install slim_lint
-          slim-lint --version
-
-      - name: Setup virtual display
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb
-          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-
-      - name: Compile TypeScript
-        run: npm run compile
-
-      - name: Run tests
-        run: npm test
-        env:
-          DISPLAY: ':99'
-          ELECTRON_DISABLE_SANDBOX: 'true'
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-${{ matrix.node-version }}
-          path: |
-            out/test/
-            .vscode-test/
-          retention-days: 7
-
-  test-with-ruby:
-    name: Test with Ruby and slim-lint on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          cache: 'npm'
-
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-          bundler-cache: true
-
-      - name: Install Node.js dependencies
         run: npm ci
 
       - name: Install slim-lint
@@ -132,7 +89,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results-${{ matrix.os }}
+          name: test-results-${{ matrix.os }}-${{ matrix.node-version }}
           path: |
             out/test/
             .vscode-test/
