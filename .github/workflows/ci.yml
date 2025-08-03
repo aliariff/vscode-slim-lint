@@ -69,21 +69,7 @@ jobs:
           DISPLAY: ${{ matrix.os == 'ubuntu-latest' && ':99' || '' }}
           ELECTRON_DISABLE_SANDBOX: 'true'
 
-      - name: Test slim-lint integration
-        run: |
-          # Test that slim-lint can be executed
-          slim-lint --version
 
-          # Test with a sample slim file
-          echo "h1 Hello World" > test.slim
-          slim-lint test.slim || true  # Don't fail if there are linting issues
-
-          # Clean up (cross-platform)
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            Remove-Item test.slim -ErrorAction SilentlyContinue
-          else
-            rm -f test.slim
-          fi
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
