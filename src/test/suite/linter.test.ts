@@ -411,6 +411,26 @@ Another invalid line`;
     
     console.log(`📊 Tab test file produced ${diagnostics.length} diagnostics`);
     
+    // Verify the linter completed successfully
+    console.log('🔍 Verifying linter completion...');
+    assert.ok(Array.isArray(diagnostics), 'Diagnostics should be an array');
+    assert.ok(linter['collection'], 'Diagnostic collection should exist');
+    
+    if (diagnostics.length > 0) {
+      console.log('📋 Detailed diagnostics:');
+      diagnostics.forEach((diagnostic, index) => {
+        console.log(`  ${index + 1}. ${diagnostic.message} (${diagnostic.severity}) at line ${diagnostic.range.start.line}`);
+      });
+      
+      // Verify diagnostics have proper structure
+      console.log('🔍 Validating diagnostic structure...');
+      diagnostics.forEach((diagnostic, index) => {
+        assert.ok(diagnostic.message, `Diagnostic ${index} should have a message`);
+        assert.ok(diagnostic.range, `Diagnostic ${index} should have a range`);
+        assert.ok(typeof diagnostic.severity === 'number', `Diagnostic ${index} should have a severity`);
+      });
+    }
+    
     // Should have exactly 10 diagnostics including Tab, LineLength, and TrailingWhitespace
     console.log('✅ Verifying exact diagnostic count...');
     assert.strictEqual(diagnostics.length, 10, `Should have exactly 10 diagnostics from tab test file, got ${diagnostics.length}`);
@@ -427,6 +447,12 @@ Another invalid line`;
       lineLength: hasLineLengthRule,
       trailingWhitespace: hasTrailingWhitespaceRule
     });
+    
+    // Verify specific rule types are present
+    console.log('✅ Verifying rule type presence...');
+    assert.ok(hasTabRule, 'Tab test file should have Tab diagnostics');
+    assert.ok(hasLineLengthRule, 'Tab test file should have LineLength diagnostics');
+    assert.ok(hasTrailingWhitespaceRule, 'Tab test file should have TrailingWhitespace diagnostics');
     
     console.log('✅ Various rule types test completed');
   });
