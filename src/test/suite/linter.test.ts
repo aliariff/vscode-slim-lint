@@ -45,7 +45,7 @@ suite('Linter Test Suite', () => {
   ): Promise<readonly vscode.Diagnostic[]> => {
     const filePath = getFixturePath(filename);
     const document = await vscode.workspace.openTextDocument(filePath);
-    linter.run(document);
+    // Rely only on event-driven execution
 
     const startTime = Date.now();
 
@@ -53,7 +53,8 @@ suite('Linter Test Suite', () => {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     while (Date.now() - startTime < maxTimeout) {
-      const diagnostics = linter['collection'].get(document.uri) || [];
+      // Get diagnostics from the extension's diagnostic collection
+      const diagnostics = vscode.languages.getDiagnostics(document.uri);
 
       // If we have diagnostics, return them
       if (diagnostics.length > 0) {
@@ -65,7 +66,7 @@ suite('Linter Test Suite', () => {
     }
 
     // Return final result if timeout reached
-    return linter['collection'].get(document.uri) || [];
+    return vscode.languages.getDiagnostics(document.uri);
   };
 
   setup(async () => {
