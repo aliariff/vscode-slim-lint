@@ -265,21 +265,25 @@ Another invalid line`;
       });
     }
     
-    // The test passes if we got multiple diagnostics from slim-lint (our complex file should trigger multiple issues)
-    assert.ok(diagnostics.length >= 5, `Should have at least 5 diagnostics from real slim-lint execution, got ${diagnostics.length}`);
+    // The test passes if we got exactly 7 diagnostics from slim-lint (our complex file should trigger specific issues)
+    assert.strictEqual(diagnostics.length, 7, `Should have exactly 7 diagnostics from real slim-lint execution, got ${diagnostics.length}`);
     
     // Verify we have the expected rule types in our complex test file
     const diagnosticMessages = diagnostics.map(d => d.message);
     const hasLineLengthRule = diagnosticMessages.some(msg => msg.includes('LineLength:'));
     const hasTrailingWhitespaceRule = diagnosticMessages.some(msg => msg.includes('TrailingWhitespace:'));
+    const hasTrailingBlankLinesRule = diagnosticMessages.some(msg => msg.includes('TrailingBlankLines:'));
     
     console.log('Complex test file rule types found:', {
       lineLength: hasLineLengthRule,
-      trailingWhitespace: hasTrailingWhitespaceRule
+      trailingWhitespace: hasTrailingWhitespaceRule,
+      trailingBlankLines: hasTrailingBlankLinesRule
     });
     
-    // Our complex file should definitely have LineLength issues
+    // Our complex file should have specific rule types
     assert.ok(hasLineLengthRule, 'Complex test file should have LineLength diagnostics');
+    assert.ok(hasTrailingWhitespaceRule, 'Complex test file should have TrailingWhitespace diagnostics');
+    assert.ok(hasTrailingBlankLinesRule, 'Complex test file should have TrailingBlankLines diagnostics');
   });
 
   test('Should handle various slim-lint rule types', async () => {
@@ -298,8 +302,8 @@ Another invalid line`;
     
     console.log(`Tab test file produced ${diagnostics.length} diagnostics`);
     
-    // Should have multiple diagnostics including Tab, LineLength, and TrailingWhitespace
-    assert.ok(diagnostics.length >= 3, `Should have at least 3 diagnostics from tab test file, got ${diagnostics.length}`);
+    // Should have exactly 10 diagnostics including Tab, LineLength, and TrailingWhitespace
+    assert.strictEqual(diagnostics.length, 10, `Should have exactly 10 diagnostics from tab test file, got ${diagnostics.length}`);
     
     // Check for specific rule types
     const diagnosticMessages = diagnostics.map(d => d.message);
