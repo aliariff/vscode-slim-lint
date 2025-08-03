@@ -53,14 +53,18 @@ export default class Linter implements vscode.Disposable {
    * @param level The log level (info, warn, error)
    * @param showInTest Whether to show in test mode (default: false)
    */
-  private log(message: string, level: 'info' | 'warn' | 'error' = 'info', showInTest: boolean = false): void {
+  private log(
+    message: string,
+    level: 'info' | 'warn' | 'error' = 'info',
+    showInTest: boolean = false
+  ): void {
     if (this.disposed) return;
-    
+
     const prefix = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : 'ℹ️';
     const logMessage = `${prefix} ${message}`;
-    
+
     this.outputChannel.appendLine(logMessage);
-    
+
     // Only log to console in test mode if explicitly requested
     if (this.isTestMode && showInTest) {
       console.log(logMessage);
@@ -554,7 +558,11 @@ export default class Linter implements vscode.Disposable {
       }
 
       if (stdout) {
-        this.log(`Found ${stdout.split('\n').filter(line => line.trim()).length} issues`, 'info', true);
+        this.log(
+          `Found ${stdout.split('\n').filter(line => line.trim()).length} issues`,
+          'info',
+          true
+        );
       }
 
       if (stderr) {
@@ -584,12 +592,16 @@ export default class Linter implements vscode.Disposable {
 
       // Log performance timing
       const duration = Date.now() - startTime;
-      this.log(`Completed in ${duration}ms (${diagnostics.length} diagnostics)`, 'info', true);
+      this.log(
+        `Completed in ${duration}ms (${diagnostics.length} diagnostics)`,
+        'info',
+        true
+      );
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       const duration = Date.now() - startTime;
-      
+
       this.log(`Failed after ${duration}ms: ${errorMessage}`, 'error');
 
       if (!this.disposed) {
