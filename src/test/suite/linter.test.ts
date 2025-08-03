@@ -198,7 +198,13 @@ Another invalid line`;
 
     assert.ok(Array.isArray(diagnostics), 'Diagnostics should be an array');
     assert.ok(linter['collection'], 'Diagnostic collection should exist');
-    assert.ok(diagnostics.length > 0, 'Should produce diagnostics for complex file');
+
+    // The test passes if we got exactly 7 diagnostics from slim-lint (our complex file should trigger specific issues)
+    assert.strictEqual(
+      diagnostics.length,
+      7,
+      `Should have exactly 7 diagnostics from real slim-lint execution, got ${diagnostics.length}`
+    );
 
     // Verify diagnostics have proper structure
     diagnostics.forEach((diagnostic, index) => {
@@ -213,7 +219,7 @@ Another invalid line`;
       );
     });
 
-    // Verify we have expected rule types
+    // Verify we have the expected rule types in our complex test file
     const diagnosticMessages = diagnostics.map(d => d.message);
     const hasLineLengthRule = diagnosticMessages.some(msg =>
       msg.includes('LineLength:')
@@ -221,7 +227,11 @@ Another invalid line`;
     const hasTrailingWhitespaceRule = diagnosticMessages.some(msg =>
       msg.includes('TrailingWhitespace:')
     );
+    const hasTrailingBlankLinesRule = diagnosticMessages.some(msg =>
+      msg.includes('TrailingBlankLines:')
+    );
 
+    // Our complex file should have specific rule types
     assert.ok(
       hasLineLengthRule,
       'Complex test file should have LineLength diagnostics'
@@ -229,6 +239,10 @@ Another invalid line`;
     assert.ok(
       hasTrailingWhitespaceRule,
       'Complex test file should have TrailingWhitespace diagnostics'
+    );
+    assert.ok(
+      hasTrailingBlankLinesRule,
+      'Complex test file should have TrailingBlankLines diagnostics'
     );
   });
 
@@ -247,7 +261,13 @@ Another invalid line`;
 
     assert.ok(Array.isArray(diagnostics), 'Diagnostics should be an array');
     assert.ok(linter['collection'], 'Diagnostic collection should exist');
-    assert.ok(diagnostics.length > 0, 'Should produce diagnostics for tab test file');
+
+    // Should have exactly 10 diagnostics including Tab, LineLength, and TrailingWhitespace
+    assert.strictEqual(
+      diagnostics.length,
+      10,
+      `Should have exactly 10 diagnostics from tab test file, got ${diagnostics.length}`
+    );
 
     // Verify diagnostics have proper structure
     diagnostics.forEach((diagnostic, index) => {
