@@ -525,6 +525,12 @@ export default class Linter implements vscode.Disposable {
       this.outputChannel.appendLine(`slim-lint stdout: ${stdout}`);
       if (stderr) {
         this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
+        
+        // Show error message in VS Code window when stderr exists
+        const errorMessage = `slim-lint error: ${stderr.trim()}`;
+        window.showErrorMessage(errorMessage);
+        this.outputChannel.appendLine(`Error displayed to user: ${errorMessage}`);
+        return;
       }
 
       // Check if document content changed during linting
