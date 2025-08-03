@@ -23,9 +23,9 @@ suite('Linter Test Suite', () => {
   });
 
   test('Should not run on non-slim files', async () => {
-    const workspaceRoot =
-      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
-    const jsFile = path.join(workspaceRoot, 'src/test/fixtures/test-file.js');
+    // Get the project root by going up from the test file location
+    const projectRoot = path.resolve(__dirname, '../../../');
+    const jsFile = path.join(projectRoot, 'src/test/fixtures/test-file.js');
     const jsDocument = await vscode.workspace.openTextDocument(jsFile);
 
     linter.run(jsDocument);
@@ -165,10 +165,10 @@ Another invalid line`;
   });
 
   test('Should handle valid slim files without issues', async () => {
-    const workspaceRoot =
-      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
+    // Get the project root by going up from the test file location
+    const projectRoot = path.resolve(__dirname, '../../../');
     const validTestFile = path.join(
-      workspaceRoot,
+      projectRoot,
       'src/test/fixtures/valid-test.slim'
     );
     const validTestDocument =
@@ -187,10 +187,10 @@ Another invalid line`;
   });
 
   test('Should run linter and produce real diagnostics from slim-lint execution', async () => {
-    const workspaceRoot =
-      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
+    // Get the project root by going up from the test file location
+    const projectRoot = path.resolve(__dirname, '../../../');
     const complexTestFile = path.join(
-      workspaceRoot,
+      projectRoot,
       'src/test/fixtures/complex-test.slim'
     );
     const complexTestDocument =
@@ -236,10 +236,10 @@ Another invalid line`;
   });
 
   test('Should handle various slim-lint rule types', async () => {
-    const workspaceRoot =
-      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
+    // Get the project root by going up from the test file location
+    const projectRoot = path.resolve(__dirname, '../../../');
     const tabTestFile = path.join(
-      workspaceRoot,
+      projectRoot,
       'src/test/fixtures/tab-test.slim'
     );
     const tabTestDocument =
