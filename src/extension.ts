@@ -55,7 +55,8 @@ function validateConfiguration(): void {
   }
 
   // Validate configuration file if it exists
-  const projectRoot = path.resolve(__dirname, '../../');
+  const projectRoot =
+    vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
   const resolvedConfigPath =
     configurationPath === '.slim-lint.yml'
       ? path.join(projectRoot, configurationPath)
@@ -97,7 +98,8 @@ function validateConfiguration(): void {
     outputChannel.appendLine(warningMessage);
 
     // Check if there are any .slim-lint.yml files in the project
-    const projectRoot = path.resolve(__dirname, '../../');
+    const projectRoot =
+      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
     const possibleConfigs = [
       '.slim-lint.yml',
       '.slim-lint.yaml',
