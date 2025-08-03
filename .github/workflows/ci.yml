@@ -13,19 +13,8 @@ jobs:
 
     strategy:
       matrix:
-        include:
-          # Node.js version testing on Ubuntu
-          - os: ubuntu-latest
-            node-version: '18.x'
-          - os: ubuntu-latest
-            node-version: '20.x'
-          - os: ubuntu-latest
-            node-version: '22.x'
-          # Cross-platform testing with Node.js 20
-          - os: windows-latest
-            node-version: '20.x'
-          - os: macos-latest
-            node-version: '20.x'
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ['18.x', '20.x', '22.x']
 
     steps:
       - name: Checkout code
