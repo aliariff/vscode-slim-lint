@@ -7,7 +7,7 @@ export function run(): Promise<void> {
   const mocha = new Mocha({
     ui: 'tdd',
     color: true,
-    timeout: 10000,
+    timeout: 60000, // Increased timeout for Windows CI performance
   });
 
   const testsRoot = path.resolve(__dirname, '..');

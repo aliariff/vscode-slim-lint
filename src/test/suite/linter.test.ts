@@ -8,28 +8,108 @@ suite('Linter Test Suite', () => {
   let linter: Linter;
   let outputChannel: vscode.OutputChannel;
 
+  // Helper function to get project root
+  const getProjectRoot = (): string => {
+    return path.resolve(__dirname, '../../../');
+  };
+
+  // Helper function to get fixture file path
+  const getFixturePath = (filename: string): string => {
+    return path.join(getProjectRoot(), 'src/test/fixtures', filename);
+  };
+
+  // Helper function to create mock document
+  const createMockDocument = (
+    languageId: string,
+    content: string,
+    fileName: string
+  ): vscode.TextDocument => {
+    return {
+      languageId,
+      uri: vscode.Uri.file(`/${fileName}`),
+      getText: () => content,
+      lineCount: content.split('\n').length,
+      lineAt: (line: number) => ({
+        range: new vscode.Range(line, 0, line, 10),
+        firstNonWhitespaceCharacterIndex: 0,
+      }),
+      fileName,
+    } as vscode.TextDocument;
+  };
+
+  // Helper function to run linter on file and get diagnostics with polling
+  const runLinterOnFile = async (
+    filename: string,
+    maxTimeout: number = 30000,
+    pollInterval: number = 100
+  ): Promise<readonly vscode.Diagnostic[]> => {
+    const filePath = getFixturePath(filename);
+    const document = await vscode.workspace.openTextDocument(filePath);
+    linter.run(document);
+
+    const startTime = Date.now();
+
+    // Wait for initial processing
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    while (Date.now() - startTime < maxTimeout) {
+      const diagnostics = linter['collection'].get(document.uri) || [];
+
+      // If we have diagnostics, return them
+      if (diagnostics.length > 0) {
+        return diagnostics;
+      }
+
+      // Wait a bit before checking again
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    }
+
+    // Return final result if timeout reached
+    return linter['collection'].get(document.uri) || [];
+  };
+
   setup(async () => {
     outputChannel = vscode.window.createOutputChannel('Slim Lint Test');
     linter = new Linter(outputChannel);
+
+    // Configure slim-lint executable path for tests using global settings
+    const config = vscode.workspace.getConfiguration('slimLint');
+    await config.update(
+      'executablePath',
+      'bundle exec slim-lint',
+      vscode.ConfigurationTarget.Global
+    );
+    await config.update(
+      'configurationPath',
+      '.slim-lint.yml',
+      vscode.ConfigurationTarget.Global
+    );
   });
 
-  teardown(() => {
+  teardown(async () => {
     if (linter) {
       linter.dispose();
     }
     if (outputChannel) {
       outputChannel.dispose();
     }
+
+    // Reset slim-lint configuration after tests
+    const config = vscode.workspace.getConfiguration('slimLint');
+    await config.update(
+      'executablePath',
+      'slim-lint',
+      vscode.ConfigurationTarget.Global
+    );
+    await config.update(
+      'configurationPath',
+      '.slim-lint.yml',
+      vscode.ConfigurationTarget.Global
+    );
   });
 
   test('Should not run on non-slim files', async () => {
-    const jsFile = path.join(process.cwd(), 'src/test/fixtures/test-file.js');
-    const jsDocument = await vscode.workspace.openTextDocument(jsFile);
-
-    linter.run(jsDocument);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const jsDiagnostics = linter['collection'].get(jsDocument.uri) || [];
+    const jsDiagnostics = await runLinterOnFile('test-file.js', 5000);
     assert.strictEqual(
       jsDiagnostics.length,
       0,
@@ -41,18 +121,11 @@ suite('Linter Test Suite', () => {
     const mockOutput = `test-file.slim:3 [W] LineLength: Line is too long. [80/120]
 test-file.slim:5 [E] TrailingWhitespace: Trailing whitespace detected`;
 
-    const mockDocument = {
-      languageId: 'slim',
-      uri: vscode.Uri.file('/test-file.slim'),
-      getText: () =>
-        'doctype html\nhtml\n  head\n    title Test\n  body\n    div',
-      lineCount: 6,
-      lineAt: (line: number) => ({
-        range: new vscode.Range(line, 0, line, 10),
-        firstNonWhitespaceCharacterIndex: 0,
-      }),
-      fileName: 'test-file.slim',
-    } as vscode.TextDocument;
+    const mockDocument = createMockDocument(
+      'slim',
+      'doctype html\nhtml\n  head\n    title Test\n  body\n    div',
+      'test-file.slim'
+    );
 
     const diagnostics = (
       linter as unknown as {
@@ -102,17 +175,11 @@ test-file.slim:5 [E] TrailingWhitespace: Trailing whitespace detected`;
 
   test('Should handle empty slim-lint output', () => {
     const mockOutput = '';
-    const mockDocument = {
-      languageId: 'slim',
-      uri: vscode.Uri.file('/test-file.slim'),
-      getText: () => 'doctype html',
-      lineCount: 1,
-      lineAt: (line: number) => ({
-        range: new vscode.Range(line, 0, line, 10),
-        firstNonWhitespaceCharacterIndex: 0,
-      }),
-      fileName: 'test-file.slim',
-    } as vscode.TextDocument;
+    const mockDocument = createMockDocument(
+      'slim',
+      'doctype html',
+      'test-file.slim'
+    );
 
     const diagnostics = (
       linter as unknown as {
@@ -134,17 +201,11 @@ test-file.slim:5 [E] TrailingWhitespace: Trailing whitespace detected`;
     const mockOutput = `Invalid output format
 Another invalid line`;
 
-    const mockDocument = {
-      languageId: 'slim',
-      uri: vscode.Uri.file('/test-file.slim'),
-      getText: () => 'doctype html',
-      lineCount: 1,
-      lineAt: (line: number) => ({
-        range: new vscode.Range(line, 0, line, 10),
-        firstNonWhitespaceCharacterIndex: 0,
-      }),
-      fileName: 'test-file.slim',
-    } as vscode.TextDocument;
+    const mockDocument = createMockDocument(
+      'slim',
+      'doctype html',
+      'test-file.slim'
+    );
 
     const diagnostics = (
       linter as unknown as {
@@ -163,17 +224,7 @@ Another invalid line`;
   });
 
   test('Should handle valid slim files without issues', async () => {
-    const validTestFile = path.join(
-      process.cwd(),
-      'src/test/fixtures/valid-test.slim'
-    );
-    const validTestDocument =
-      await vscode.workspace.openTextDocument(validTestFile);
-
-    linter.run(validTestDocument);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    const diagnostics = linter['collection'].get(validTestDocument.uri) || [];
+    const diagnostics = await runLinterOnFile('valid-test.slim', 10000);
 
     assert.strictEqual(
       diagnostics.length,
@@ -183,18 +234,7 @@ Another invalid line`;
   });
 
   test('Should run linter and produce real diagnostics from slim-lint execution', async () => {
-    const complexTestFile = path.join(
-      process.cwd(),
-      'src/test/fixtures/complex-test.slim'
-    );
-    const complexTestDocument =
-      await vscode.workspace.openTextDocument(complexTestFile);
-
-    linter.clear(complexTestDocument);
-    linter.run(complexTestDocument);
-    await new Promise(resolve => setTimeout(resolve, 5000));
-
-    const diagnostics = linter['collection'].get(complexTestDocument.uri) || [];
+    const diagnostics = await runLinterOnFile('complex-test.slim', 15000);
 
     assert.strictEqual(
       diagnostics.length,
@@ -230,17 +270,7 @@ Another invalid line`;
   });
 
   test('Should handle various slim-lint rule types', async () => {
-    const tabTestFile = path.join(
-      process.cwd(),
-      'src/test/fixtures/tab-test.slim'
-    );
-    const tabTestDocument =
-      await vscode.workspace.openTextDocument(tabTestFile);
-
-    linter.run(tabTestDocument);
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    const diagnostics = linter['collection'].get(tabTestDocument.uri) || [];
+    const diagnostics = await runLinterOnFile('tab-test.slim', 10000);
 
     assert.strictEqual(
       diagnostics.length,
