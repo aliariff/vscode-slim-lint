@@ -23,7 +23,8 @@ suite('Linter Test Suite', () => {
   });
 
   test('Should not run on non-slim files', async () => {
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
+    const workspaceRoot =
+      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
     const jsFile = path.join(workspaceRoot, 'src/test/fixtures/test-file.js');
     const jsDocument = await vscode.workspace.openTextDocument(jsFile);
 
@@ -164,7 +165,8 @@ Another invalid line`;
   });
 
   test('Should handle valid slim files without issues', async () => {
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
+    const workspaceRoot =
+      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
     const validTestFile = path.join(
       workspaceRoot,
       'src/test/fixtures/valid-test.slim'
@@ -185,7 +187,8 @@ Another invalid line`;
   });
 
   test('Should run linter and produce real diagnostics from slim-lint execution', async () => {
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
+    const workspaceRoot =
+      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
     const complexTestFile = path.join(
       workspaceRoot,
       'src/test/fixtures/complex-test.slim'
@@ -233,7 +236,8 @@ Another invalid line`;
   });
 
   test('Should handle various slim-lint rule types', async () => {
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
+    const workspaceRoot =
+      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
     const tabTestFile = path.join(
       workspaceRoot,
       'src/test/fixtures/tab-test.slim'
