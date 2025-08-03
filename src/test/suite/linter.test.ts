@@ -4,6 +4,8 @@ import * as path from 'path';
 import { suite, test, setup, teardown } from 'mocha';
 import Linter from '../../linter';
 
+
+
 suite('Linter Test Suite', () => {
   let linter: Linter;
   let outputChannel: vscode.OutputChannel;
@@ -54,7 +56,7 @@ test-file.slim:5 [E] TrailingWhitespace: Trailing whitespace detected`;
       fileName: 'test-file.slim',
     } as vscode.TextDocument;
 
-    const diagnostics = (linter as any).parseOutput(mockOutput, mockDocument);
+    const diagnostics = (linter as unknown as { parseOutput: (output: string, document: vscode.TextDocument) => vscode.Diagnostic[] }).parseOutput(mockOutput, mockDocument);
 
     assert.strictEqual(diagnostics.length, 2, 'Should parse 2 diagnostics');
 
@@ -107,7 +109,7 @@ test-file.slim:5 [E] TrailingWhitespace: Trailing whitespace detected`;
       fileName: 'test-file.slim',
     } as vscode.TextDocument;
 
-    const diagnostics = (linter as any).parseOutput(mockOutput, mockDocument);
+    const diagnostics = (linter as unknown as { parseOutput: (output: string, document: vscode.TextDocument) => vscode.Diagnostic[] }).parseOutput(mockOutput, mockDocument);
 
     assert.strictEqual(
       diagnostics.length,
@@ -132,7 +134,7 @@ Another invalid line`;
       fileName: 'test-file.slim',
     } as vscode.TextDocument;
 
-    const diagnostics = (linter as any).parseOutput(mockOutput, mockDocument);
+    const diagnostics = (linter as unknown as { parseOutput: (output: string, document: vscode.TextDocument) => vscode.Diagnostic[] }).parseOutput(mockOutput, mockDocument);
 
     assert.strictEqual(
       diagnostics.length,
