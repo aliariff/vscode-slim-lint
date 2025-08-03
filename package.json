@@ -12,7 +12,7 @@
     "url": "https://github.com/aliariff/vscode-slim-lint"
   },
   "engines": {
-    "vscode": "^1.32.0"
+    "vscode": "^1.102.0"
   },
   "categories": [
     "Linters"
