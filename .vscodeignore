@@ -16,3 +16,4 @@ Gemfile.lock
 .prettierrc
 .gitattributes
 package-lock.json
+webpack.config.js

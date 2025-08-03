@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Compile TypeScript
+      - name: Compile with webpack
         run: npm run compile
 
       - name: Package extension

@@ -2,7 +2,7 @@
   "name": "slim-lint",
   "displayName": "Slim Lint",
   "description": "Slim Linter for Visual Studio Code",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "publisher": "aliariff",
   "license": "MIT",
   "icon": "images/icon.png",
@@ -54,12 +54,13 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "webpack --mode production",
+    "compile:dev": "webpack --mode development",
+    "watch": "webpack --mode development --watch",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
-    "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
     "test": "node ./out/test/runTest.js",
     "package": "vsce package",
@@ -84,7 +85,10 @@
     "source-map-support": "^0.5.21",
     "typescript": "^5.4.5",
     "@vscode/vsce": "^3.6.0",
-    "ovsx": "^0.8.0"
+    "ovsx": "^0.8.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "ts-loader": "^9.5.1"
   },
   "dependencies": {
     "execa": "^9.6.0"

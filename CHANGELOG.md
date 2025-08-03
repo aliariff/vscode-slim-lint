@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2025-01-XX
+
+### Fixed
+
+- **Critical**: Fixed "Cannot find module 'execa'" error by implementing webpack bundling
+- Added webpack configuration to bundle dependencies with the extension
+- Updated build process to use webpack instead of direct TypeScript compilation
+- Ensured all dependencies are properly bundled in the published extension
+
+### Changed
+
+- Updated package.json scripts to use webpack for compilation
+- Added webpack, webpack-cli, and ts-loader as dev dependencies
+- Updated GitHub workflow to use webpack build process
+- Updated .vscodeignore to exclude webpack config from package
+
 ## [0.4.0] - 2025-08-03
 
 ### Added
