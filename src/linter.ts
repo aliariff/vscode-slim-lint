@@ -33,12 +33,10 @@ interface SlimLintOutput {
 
 export default class Linter {
   private collection: DiagnosticCollection;
-  private processes: WeakMap<TextDocument, any>;
   private outputChannel: vscode.OutputChannel;
 
   constructor(outputChannel: vscode.OutputChannel) {
     this.collection = languages.createDiagnosticCollection(DIAGNOSTIC_COLLECTION_NAME);
-    this.processes = new WeakMap();
     this.outputChannel = outputChannel;
   }
 
@@ -132,7 +130,7 @@ export default class Linter {
     if (fs.existsSync(resolvedConfigPath)) {
       args.push('--config', resolvedConfigPath);
     } else {
-      console.warn(
+      this.outputChannel.appendLine(
         `Configuration file ${resolvedConfigPath} does not exist! Using default slim-lint settings.`
       );
     }
@@ -141,17 +139,7 @@ export default class Linter {
     return args;
   }
 
-  /**
-   * Kill any existing process for the document
-   * @param document The text document
-   */
-  private killExistingProcess(document: TextDocument): void {
-    const existingProcess = this.processes.get(document);
-    if (existingProcess) {
-      existingProcess.kill();
-      this.processes.delete(document);
-    }
-  }
+
 
   /**
    * Execute slim-lint command
@@ -170,7 +158,7 @@ export default class Linter {
     const { stdout, stderr } = await execaProcess;
     
     if (stderr) {
-      console.error('slim-lint stderr:', stderr);
+      this.outputChannel.appendLine(`slim-lint stderr: ${stderr}`);
       window.showErrorMessage(`slim-lint error: ${stderr}`);
     }
 
@@ -225,7 +213,7 @@ export default class Linter {
 
       return new Diagnostic(range, `${ruleName}: ${message}`, severity);
     } catch (error) {
-      console.error('Error creating diagnostic:', error);
+      this.outputChannel.appendLine(`Error creating diagnostic: ${error}`);
       return null;
     }
   }
@@ -246,9 +234,6 @@ export default class Linter {
    */
   private async lint(document: TextDocument): Promise<void> {
     const originalText = document.getText();
-    
-    // Kill any existing process for this document
-    this.killExistingProcess(document);
 
     try {
       // Get configuration and build command
@@ -278,7 +263,7 @@ export default class Linter {
 
     } catch (error) {
       this.outputChannel.appendLine(`Error during linting: ${error}`);
-      console.error('Error during linting:', error);
+      this.outputChannel.appendLine(`Error during linting: ${error}`);
       window.showErrorMessage(`slim-lint execution failed: ${error}`);
     }
   }
