@@ -55,8 +55,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+
       - name: Publish to VS Code Marketplace
-        run: npm run publish:vscode -- --pat ${{ secrets.VSCE_PAT }}
+        run: vsce publish --pat ${{ secrets.VSCE_PAT }}
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         continue-on-error: false
@@ -80,8 +83,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install ovsx
+        run: npm install -g ovsx
+
       - name: Publish to OpenVSX Registry
-        run: npm run publish:openvsx -- --pat ${{ secrets.OVSX_PAT }}
+        run: ovsx publish --pat ${{ secrets.OVSX_PAT }}
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
         continue-on-error: false
