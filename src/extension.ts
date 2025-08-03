@@ -6,7 +6,7 @@ import Linter from './linter';
 let linter: Linter;
 let outputChannel: vscode.OutputChannel;
 
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext): void {
   // Create output channel for logging
   outputChannel = vscode.window.createOutputChannel('Slim Lint');
   outputChannel.appendLine('Slim Lint extension activated');
@@ -17,7 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Add linter to subscriptions for proper cleanup
     context.subscriptions.push(linter);
 
-    const updateDiagnostics = (document: vscode.TextDocument) => {
+    const updateDiagnostics = (document: vscode.TextDocument): void => {
       if (linter) {
         linter.run(document);
       }
@@ -51,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 }
 
-export function deactivate() {
+export function deactivate(): void {
   if (linter) {
     linter.dispose();
   }

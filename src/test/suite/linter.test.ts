@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { suite, test, setup, teardown, beforeEach, afterEach } from 'mocha';
+import { suite, test, setup, teardown } from 'mocha';
 import Linter from '../../linter';
 
 suite('Linter Test Suite', () => {
@@ -171,7 +171,7 @@ test-file.slim:5 [E] TrailingWhitespace: Trailing whitespace detected`;
 
     // Test the parseOutput method directly
     console.log('🔍 Parsing slim-lint output...');
-    const diagnostics = (linter as any).parseOutput(mockOutput, mockDocument);
+    const diagnostics = (linter as unknown as { parseOutput: (output: string, document: vscode.TextDocument) => vscode.Diagnostic[] }).parseOutput(mockOutput, mockDocument);
 
     console.log(`📊 Parsed ${diagnostics.length} diagnostics`);
     assert.strictEqual(diagnostics.length, 2, 'Should parse 2 diagnostics');
@@ -210,7 +210,7 @@ test-file.slim:5 [E] TrailingWhitespace: Trailing whitespace detected`;
     } as vscode.TextDocument;
 
     console.log('🔍 Parsing empty output...');
-    const diagnostics = (linter as any).parseOutput(mockOutput, mockDocument);
+    const diagnostics = (linter as unknown as { parseOutput: (output: string, document: vscode.TextDocument) => vscode.Diagnostic[] }).parseOutput(mockOutput, mockDocument);
 
     console.log(`📊 Parsed ${diagnostics.length} diagnostics from empty output`);
     assert.strictEqual(diagnostics.length, 0, 'Should return empty array for empty output');
@@ -238,7 +238,7 @@ Another invalid line`;
     } as vscode.TextDocument;
 
     console.log('🔍 Parsing malformed output...');
-    const diagnostics = (linter as any).parseOutput(mockOutput, mockDocument);
+    const diagnostics = (linter as unknown as { parseOutput: (output: string, document: vscode.TextDocument) => vscode.Diagnostic[] }).parseOutput(mockOutput, mockDocument);
 
     console.log(`📊 Parsed ${diagnostics.length} diagnostics from malformed output`);
     assert.strictEqual(diagnostics.length, 0, 'Should return empty array for malformed output');
