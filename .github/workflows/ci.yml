@@ -53,6 +53,122 @@ jobs:
             .vscode-test/
           retention-days: 7
 
+  test-windows:
+    name: Test on Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Install slim-lint
+        run: |
+          gem install slim_lint
+          slim-lint --version
+
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Run tests on Windows
+        run: npm test
+        env:
+          ELECTRON_DISABLE_SANDBOX: 'true'
+
+      - name: Test Windows compatibility
+        run: |
+          # Test that slim-lint can be executed on Windows
+          slim-lint --version
+          
+          # Test with a sample slim file
+          echo "h1 Hello World" > test.slim
+          slim-lint test.slim || true  # Don't fail if there are linting issues
+          
+          # Clean up
+          Remove-Item test.slim -ErrorAction SilentlyContinue
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-windows
+          path: |
+            out/test/
+            .vscode-test/
+          retention-days: 7
+
+  test-macos:
+    name: Test on macOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Install slim-lint
+        run: |
+          gem install slim_lint
+          slim-lint --version
+
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Run tests on macOS
+        run: npm test
+        env:
+          ELECTRON_DISABLE_SANDBOX: 'true'
+
+      - name: Test macOS compatibility
+        run: |
+          # Test that slim-lint can be executed on macOS
+          slim-lint --version
+          
+          # Test with a sample slim file
+          echo "h1 Hello World" > test.slim
+          slim-lint test.slim || true  # Don't fail if there are linting issues
+          
+          # Clean up
+          rm -f test.slim
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-macos
+          path: |
+            out/test/
+            .vscode-test/
+          retention-days: 7
+
   lint-and-format:
     name: Lint and Format Check
     runs-on: ubuntu-latest
@@ -83,3 +199,68 @@ jobs:
             git diff
             exit 1
           fi
+
+  test-with-ruby:
+    name: Test with Ruby and slim-lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Install slim-lint
+        run: |
+          gem install slim_lint
+          slim-lint --version
+
+      - name: Setup virtual display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Run tests with slim-lint available
+        run: npm test
+        env:
+          DISPLAY: ':99'
+          ELECTRON_DISABLE_SANDBOX: 'true'
+
+      - name: Test slim-lint integration
+        run: |
+          # Test that slim-lint can be executed
+          slim-lint --version
+          
+          # Test with a sample slim file
+          echo "h1 Hello World" > test.slim
+          slim-lint test.slim || true  # Don't fail if there are linting issues
+          
+          # Clean up
+          rm -f test.slim
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-with-ruby
+          path: |
+            out/test/
+            .vscode-test/
+          retention-days: 7
