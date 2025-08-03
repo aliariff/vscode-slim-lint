@@ -3,6 +3,9 @@ import { runTests } from '@vscode/test-electron';
 
 async function main(): Promise<void> {
   try {
+    // Set test environment
+    process.env.NODE_ENV = 'test';
+    
     // The folder containing the Extension Manifest package.json
     const extensionDevelopmentPath = path.resolve(__dirname, '../../');
 
