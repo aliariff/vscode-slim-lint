@@ -64,13 +64,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check if version already exists
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "Checking if version $VERSION already exists in VS Code Marketplace..."
-          # This is a basic check - vsce publish will handle duplicates gracefully
-          echo "Proceeding with publish..."
-
       - name: Publish to VS Code Marketplace
         run: npm run publish:vscode -- --pat ${{ secrets.VSCE_PAT }}
         env:
@@ -95,13 +88,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Check if version already exists
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "Checking if version $VERSION already exists in OpenVSX Registry..."
-          # This is a basic check - ovsx publish will handle duplicates gracefully
-          echo "Proceeding with publish..."
 
       - name: Publish to OpenVSX Registry
         run: npm run publish:openvsx -- --pat ${{ secrets.OVSX_PAT }}
