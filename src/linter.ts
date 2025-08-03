@@ -309,7 +309,7 @@ export default class Linter implements vscode.Disposable {
     commandArgs: string[]
   ): Promise<SlimLintOutput> {
     const [command, ...args] = commandArgs;
-    const cwd = process.cwd();
+    const cwd = path.resolve(__dirname, '../../');
 
     try {
       // Validate command exists and is not empty
