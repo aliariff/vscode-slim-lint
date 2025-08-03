@@ -142,20 +142,32 @@ Another invalid line`;
   });
 
   test('Should handle valid slim files without issues', async () => {
-    const validTestFile = path.join(process.cwd(), 'src/test/fixtures/valid-test.slim');
-    const validTestDocument = await vscode.workspace.openTextDocument(validTestFile);
+    const validTestFile = path.join(
+      process.cwd(),
+      'src/test/fixtures/valid-test.slim'
+    );
+    const validTestDocument =
+      await vscode.workspace.openTextDocument(validTestFile);
 
     linter.run(validTestDocument);
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     const diagnostics = linter['collection'].get(validTestDocument.uri) || [];
 
-    assert.strictEqual(diagnostics.length, 0, 'Valid file should have no diagnostics');
+    assert.strictEqual(
+      diagnostics.length,
+      0,
+      'Valid file should have no diagnostics'
+    );
   });
 
   test('Should run linter and produce real diagnostics from slim-lint execution', async () => {
-    const complexTestFile = path.join(process.cwd(), 'src/test/fixtures/complex-test.slim');
-    const complexTestDocument = await vscode.workspace.openTextDocument(complexTestFile);
+    const complexTestFile = path.join(
+      process.cwd(),
+      'src/test/fixtures/complex-test.slim'
+    );
+    const complexTestDocument =
+      await vscode.workspace.openTextDocument(complexTestFile);
 
     linter.clear(complexTestDocument);
     linter.run(complexTestDocument);
@@ -171,19 +183,38 @@ Another invalid line`;
 
     // Verify we have the expected rule types in our complex test file
     const diagnosticMessages = diagnostics.map(d => d.message);
-    const hasLineLengthRule = diagnosticMessages.some(msg => msg.includes('LineLength:'));
-    const hasTrailingWhitespaceRule = diagnosticMessages.some(msg => msg.includes('TrailingWhitespace:'));
-    const hasTrailingBlankLinesRule = diagnosticMessages.some(msg => msg.includes('TrailingBlankLines:'));
+    const hasLineLengthRule = diagnosticMessages.some(msg =>
+      msg.includes('LineLength:')
+    );
+    const hasTrailingWhitespaceRule = diagnosticMessages.some(msg =>
+      msg.includes('TrailingWhitespace:')
+    );
+    const hasTrailingBlankLinesRule = diagnosticMessages.some(msg =>
+      msg.includes('TrailingBlankLines:')
+    );
 
     // Our complex file should have specific rule types
-    assert.ok(hasLineLengthRule, 'Complex test file should have LineLength diagnostics');
-    assert.ok(hasTrailingWhitespaceRule, 'Complex test file should have TrailingWhitespace diagnostics');
-    assert.ok(hasTrailingBlankLinesRule, 'Complex test file should have TrailingBlankLines diagnostics');
+    assert.ok(
+      hasLineLengthRule,
+      'Complex test file should have LineLength diagnostics'
+    );
+    assert.ok(
+      hasTrailingWhitespaceRule,
+      'Complex test file should have TrailingWhitespace diagnostics'
+    );
+    assert.ok(
+      hasTrailingBlankLinesRule,
+      'Complex test file should have TrailingBlankLines diagnostics'
+    );
   });
 
   test('Should handle various slim-lint rule types', async () => {
-    const tabTestFile = path.join(process.cwd(), 'src/test/fixtures/tab-test.slim');
-    const tabTestDocument = await vscode.workspace.openTextDocument(tabTestFile);
+    const tabTestFile = path.join(
+      process.cwd(),
+      'src/test/fixtures/tab-test.slim'
+    );
+    const tabTestDocument =
+      await vscode.workspace.openTextDocument(tabTestFile);
 
     linter.run(tabTestDocument);
     await new Promise(resolve => setTimeout(resolve, 3000));
@@ -199,11 +230,21 @@ Another invalid line`;
     // Check for specific rule types
     const diagnosticMessages = diagnostics.map(d => d.message);
     const hasTabRule = diagnosticMessages.some(msg => msg.includes('Tab:'));
-    const hasLineLengthRule = diagnosticMessages.some(msg => msg.includes('LineLength:'));
-    const hasTrailingWhitespaceRule = diagnosticMessages.some(msg => msg.includes('TrailingWhitespace:'));
+    const hasLineLengthRule = diagnosticMessages.some(msg =>
+      msg.includes('LineLength:')
+    );
+    const hasTrailingWhitespaceRule = diagnosticMessages.some(msg =>
+      msg.includes('TrailingWhitespace:')
+    );
 
     assert.ok(hasTabRule, 'Tab test file should have Tab diagnostics');
-    assert.ok(hasLineLengthRule, 'Tab test file should have LineLength diagnostics');
-    assert.ok(hasTrailingWhitespaceRule, 'Tab test file should have TrailingWhitespace diagnostics');
+    assert.ok(
+      hasLineLengthRule,
+      'Tab test file should have LineLength diagnostics'
+    );
+    assert.ok(
+      hasTrailingWhitespaceRule,
+      'Tab test file should have TrailingWhitespace diagnostics'
+    );
   });
 });
