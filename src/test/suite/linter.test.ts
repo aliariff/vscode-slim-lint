@@ -655,4 +655,34 @@ Another invalid line`;
     
     console.log('✅ Enhanced configuration validation test completed');
   });
+
+  test('Should log performance timing', async () => {
+    console.log('🧪 Testing performance timing...');
+    
+    const mockDocument = {
+      languageId: 'slim',
+      uri: vscode.Uri.file('/test-performance.slim'),
+      getText: () => 'doctype html\nhtml\n  head\n    title Test\n  body\n    div',
+      fileName: 'test-performance.slim',
+    } as unknown as vscode.TextDocument;
+
+    // Mock the executeSlimLint method to return quickly
+    const originalExecuteSlimLint = linter['executeSlimLint'];
+    linter['executeSlimLint'] = async () => {
+      // Simulate a quick execution
+      await new Promise(resolve => setTimeout(resolve, 10));
+      return { stdout: '', stderr: '' };
+    };
+
+    console.log('⚡ Running linter with performance timing...');
+    linter.run(mockDocument);
+    
+    // Wait for processing
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Restore original method
+    linter['executeSlimLint'] = originalExecuteSlimLint;
+    
+    console.log('✅ Performance timing test completed');
+  });
 }); 

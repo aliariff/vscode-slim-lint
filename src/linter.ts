@@ -428,7 +428,9 @@ export default class Linter implements vscode.Disposable {
       return;
     }
 
+    const startTime = Date.now();
     const originalText = document.getText();
+    const fileSize = originalText.length;
 
     try {
       // Get configuration and build command
@@ -453,6 +455,8 @@ export default class Linter implements vscode.Disposable {
       // Check if document content changed during linting
       if (originalText !== document.getText()) {
         this.outputChannel.appendLine('Document content changed during linting, skipping update');
+        const duration = Date.now() - startTime;
+        this.outputChannel.appendLine(`⏱️ Linting skipped after ${duration}ms (content changed)`);
         return;
       }
 
@@ -461,9 +465,17 @@ export default class Linter implements vscode.Disposable {
       this.outputChannel.appendLine(`Parsed ${diagnostics.length} diagnostics`);
       this.updateDiagnostics(document, diagnostics);
 
+      // Log performance timing
+      const duration = Date.now() - startTime;
+      this.outputChannel.appendLine(`⏱️ Linting completed in ${duration}ms (${diagnostics.length} diagnostics, ${fileSize} bytes)`);
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.outputChannel.appendLine(`Error during linting: ${errorMessage}`);
+      
+      // Log performance timing even for errors
+      const duration = Date.now() - startTime;
+      this.outputChannel.appendLine(`⏱️ Linting failed after ${duration}ms (${fileSize} bytes)`);
       
       if (!this.disposed) {
         // Provide specific error messages based on error type
