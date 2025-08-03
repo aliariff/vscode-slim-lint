@@ -30,6 +30,8 @@ interface SlimLintConfig {
 interface SlimLintOutput {
   stdout: string;
   stderr: string;
+  failed?: boolean;
+  code?: string;
 }
 
 export default class Linter implements vscode.Disposable {
@@ -393,7 +395,7 @@ export default class Linter implements vscode.Disposable {
         }
       }
 
-      return { stdout, stderr };
+      return { stdout, stderr, failed, code };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -422,6 +424,8 @@ export default class Linter implements vscode.Disposable {
       return {
         stdout: '',
         stderr: `slim-lint execution failed: ${errorMessage}`,
+        failed: true,
+        code: 'EXECUTION_ERROR',
       };
     }
   }
@@ -526,7 +530,8 @@ export default class Linter implements vscode.Disposable {
       }
 
       // Execute slim-lint
-      const { stdout, stderr } = await this.executeSlimLint(commandArgs);
+      const { stdout, stderr, failed, code } =
+        await this.executeSlimLint(commandArgs);
 
       // Check disposal state again after async operation
       if (this.disposed) {
@@ -546,6 +551,25 @@ export default class Linter implements vscode.Disposable {
 
         // Show error message in VS Code window when stderr exists
         const errorMessage = `slim-lint error: ${stderr.trim()}`;
+        window.showErrorMessage(errorMessage);
+        this.outputChannel.appendLine(
+          `Error displayed to user: ${errorMessage}`
+        );
+        if (process.env.NODE_ENV === 'test') {
+          console.log(`Error displayed to user: ${errorMessage}`);
+        }
+        return;
+      }
+
+      // Check if command failed (even with empty stderr)
+      if (failed) {
+        const errorMessage = `slim-lint failed: ${code}`;
+        this.outputChannel.appendLine(`slim-lint stderr: ${errorMessage}`);
+        if (process.env.NODE_ENV === 'test') {
+          console.log(`slim-lint stderr: ${errorMessage}`);
+        }
+
+        // Show error message in VS Code window when command fails
         window.showErrorMessage(errorMessage);
         this.outputChannel.appendLine(
           `Error displayed to user: ${errorMessage}`
