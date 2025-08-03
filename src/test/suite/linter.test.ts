@@ -130,7 +130,11 @@ test-file.slim:5 [E] TrailingWhitespace: Trailing whitespace detected`;
 
   test('Should handle empty slim-lint output', () => {
     const mockOutput = '';
-    const mockDocument = createMockDocument('slim', 'doctype html', 'test-file.slim');
+    const mockDocument = createMockDocument(
+      'slim',
+      'doctype html',
+      'test-file.slim'
+    );
 
     const diagnostics = (
       linter as unknown as {
@@ -152,7 +156,11 @@ test-file.slim:5 [E] TrailingWhitespace: Trailing whitespace detected`;
     const mockOutput = `Invalid output format
 Another invalid line`;
 
-    const mockDocument = createMockDocument('slim', 'doctype html', 'test-file.slim');
+    const mockDocument = createMockDocument(
+      'slim',
+      'doctype html',
+      'test-file.slim'
+    );
 
     const diagnostics = (
       linter as unknown as {
