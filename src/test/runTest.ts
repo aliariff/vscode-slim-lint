@@ -5,7 +5,7 @@ async function main(): Promise<void> {
   try {
     // Set test environment
     process.env.NODE_ENV = 'test';
-    
+
     // Suppress Electron/Chromium warnings
     process.env.ELECTRON_DISABLE_SANDBOX = 'true';
     process.env.ELECTRON_NO_ATTACH_CONSOLE = 'true';
