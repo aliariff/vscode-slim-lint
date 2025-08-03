@@ -213,8 +213,9 @@ export default class Linter implements vscode.Disposable {
    */
   private resolveConfigurationPath(configPath: string): string {
     if (configPath === DEFAULT_CONFIG_FILE) {
-      // Get project root by going up from the current file location
-      const projectRoot = path.resolve(__dirname, '../../');
+      // Get project root from workspace
+      const projectRoot =
+        vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
       return path.join(projectRoot, configPath);
     }
     // Ensure path is normalized for cross-platform compatibility
@@ -279,7 +280,8 @@ export default class Linter implements vscode.Disposable {
       this.outputChannel.appendLine(guidanceMessage);
 
       // Check if there are any .slim-lint.yml files in the project
-      const projectRoot = path.resolve(__dirname, '../../');
+      const projectRoot =
+        vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
       const possibleConfigs = [
         '.slim-lint.yml',
         '.slim-lint.yaml',
