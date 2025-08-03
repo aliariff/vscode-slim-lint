@@ -356,13 +356,15 @@ export default class Linter implements vscode.Disposable {
         timeout: LINT_TIMEOUT,
       });
 
-      const { stdout, stderr, exitCode } = result;
+      const { stdout, stderr, failed, code } = result;
 
       // Check if command failed
-      if (exitCode !== 0) {
-        this.outputChannel.appendLine(`slim-lint failed with exit code: ${exitCode}`);
+      if (failed) {
+        this.outputChannel.appendLine(
+          `slim-lint failed with code: ${code}`
+        );
         if (process.env.NODE_ENV === 'test') {
-          console.log(`slim-lint failed with exit code: ${exitCode}`);
+          console.log(`slim-lint failed with code: ${code}`);
         }
       }
 
