@@ -35,10 +35,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install slim-lint
+      - name: Install slim-lint via Bundler
         run: |
-          gem install slim_lint
-          slim-lint --version
+          bundle install
+          bundle exec slim-lint --version
 
       - name: Setup virtual display (Linux only)
         if: matrix.os == 'ubuntu-latest'
