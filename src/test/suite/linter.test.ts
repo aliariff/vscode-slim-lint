@@ -67,8 +67,7 @@ suite('Linter Test Suite', () => {
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Check that no diagnostics were created for the JS file
-    const allDiagnostics = vscode.languages.getDiagnostics();
-    const jsDiagnostics = allDiagnostics.filter(([uri]) => uri.fsPath.includes('test-file.js'));
+    const jsDiagnostics = linter['collection'].get(jsDocument.uri) || [];
     console.log(`📊 Found ${jsDiagnostics.length} diagnostics for JavaScript file`);
     
     assert.strictEqual(jsDiagnostics.length, 0, 'Should not create diagnostics for non-slim files');
